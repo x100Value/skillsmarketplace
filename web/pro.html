@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillsMarketplace Pro Payments</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>SkillsMarketplace Pro</h1>
+      <p class="muted">
+        External dashboard: TON/USDT пополнение для power users и B2B.
+      </p>
+
+      <section class="card">
+        <h2>Session</h2>
+        <input id="tokenInput" type="text" placeholder="Bearer token" />
+        <button id="saveTokenBtn">Сохранить токен</button>
+      </section>
+
+      <section class="card">
+        <h2>TON/USDT Intent</h2>
+        <input id="usdtInput" type="number" min="0.1" step="0.1" value="10" />
+        <button id="quoteBtn">Quote</button>
+        <button id="intentBtn">Create Intent</button>
+        <pre id="result"></pre>
+      </section>
+
+      <section class="card">
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="/pro.js"></script>
+  </body>
+</html>
