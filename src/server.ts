@@ -40,10 +40,17 @@ app.use("/api/withdrawals", withdrawalsRouter);
 app.use("/api/admin", adminRouter);
 
 const webPath = path.resolve(process.cwd(), "web");
+const docsPath = path.resolve(process.cwd(), "docs");
+
+app.use("/docs", express.static(docsPath));
 app.use(express.static(webPath));
 
 app.get("/pro", (_req, res) => {
   res.sendFile(path.join(webPath, "pro.html"));
+});
+
+app.get("/legal", (_req, res) => {
+  res.sendFile(path.join(webPath, "legal.html"));
 });
 
 app.get("*", (_req, res) => {

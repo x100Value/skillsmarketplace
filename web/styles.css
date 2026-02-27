@@ -181,6 +181,17 @@ button:active {
   font-weight: 600;
 }
 
+.legal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legal-link {
+  display: inline-block;
+  width: fit-content;
+}
+
 .status-chip {
   display: inline-flex;
   align-items: center;
