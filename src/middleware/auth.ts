@@ -20,6 +20,11 @@ export async function requireAuth(
     return;
   }
 
+  if (user.moderationStatus === "banned") {
+    res.status(403).json({ error: "Account is banned. Contact support." });
+    return;
+  }
+
   req.user = user;
   req.sessionToken = token;
   next();

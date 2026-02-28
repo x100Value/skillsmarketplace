@@ -4,6 +4,7 @@ export type SessionUser = {
   id: number;
   telegramUserId: string;
   username: string | null;
+  moderationStatus?: "active" | "under_review" | "banned";
 };
 
 export type AuthedRequest = Request & {

@@ -15,6 +15,7 @@ import { adminRouter } from "./routes/admin.js";
 import { pricingRouter } from "./routes/pricing.js";
 import { historyRouter } from "./routes/history.js";
 import { skillCheckRouter } from "./routes/skillCheck.js";
+import { moderationRouter } from "./routes/moderation.js";
 
 const app = express();
 const allowedOrigins = new Set(config.CORS_ALLOW_ORIGINS);
@@ -106,6 +107,7 @@ app.use("/api/tasks", tasksRouter);
 app.use("/api/skill-check", skillCheckRouter);
 app.use("/api/withdrawals", withdrawalsRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/moderation", moderationRouter);
 
 const webPath = path.resolve(process.cwd(), "web");
 const docsPath = path.resolve(process.cwd(), "docs");

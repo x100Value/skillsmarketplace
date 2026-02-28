@@ -36,8 +36,9 @@ export async function getUserBySessionToken(
     id: string;
     telegram_user_id: string;
     username: string | null;
+    moderation_status: "active" | "under_review" | "banned";
   }>(
-    `SELECT u.id, u.telegram_user_id, u.username
+    `SELECT u.id, u.telegram_user_id, u.username, u.moderation_status
      FROM sessions s
      JOIN users u ON u.id = s.user_id
      WHERE (
@@ -57,6 +58,7 @@ export async function getUserBySessionToken(
   return {
     id: Number(row.id),
     telegramUserId: row.telegram_user_id,
-    username: row.username
+    username: row.username,
+    moderationStatus: row.moderation_status
   };
 }

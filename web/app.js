@@ -64,6 +64,9 @@ const LANGS = {
     signInBtn:'Sign In',
     buyBtn:'Buy', getBtn:'Get Free',
     modalRating:'Rating', modalReviews:'Reviews', modalClose:'Cancel',
+    precheckBtn:'Check uniqueness',
+    precheckRun:'Run pre-check',
+    precheckDone:'Pre-check complete',
     comingSoon:'Purchase feature coming soon',
     skillAdded:'Skill added to your library!',
   },
@@ -120,6 +123,9 @@ const LANGS = {
     signInBtn:'Войти',
     buyBtn:'Купить', getBtn:'Получить бесплатно',
     modalRating:'Рейтинг', modalReviews:'Отзывы', modalClose:'Отмена',
+    precheckBtn:'Проверить уникальность',
+    precheckRun:'Запустить pre-check',
+    precheckDone:'Проверка завершена',
     comingSoon:'Функция покупки скоро будет доступна',
     skillAdded:'Скил добавлен в вашу библиотеку!',
   }
@@ -669,6 +675,65 @@ function renderSkills() {
   document.getElementById('skillsGridNew').innerHTML = fresh.length    ? fresh.map(renderSkillCard).join('')    : empty;
 }
 
+async function runBuyerPrecheck(skill, btn, resultEl) {
+  if (!await requireAuth()) return;
+  if (!skill?.content || skill.content.length < 80) {
+    showToast(t('toastError'));
+    return;
+  }
+
+  const quote = await api('POST', '/api/skill-check/quote', {
+    title: skill.title,
+    skillText: skill.content,
+    mode: 'hybrid'
+  });
+  if (!quote || quote.error) {
+    showToast(quote?.error || t('toastError'));
+    return;
+  }
+
+  const estimatedStars = Number(quote.quote?.estimatedTotalCredits ?? 0);
+  if (!Number.isFinite(estimatedStars) || estimatedStars <= 0) {
+    showToast(t('toastError'));
+    return;
+  }
+
+  const me = await api('GET', '/api/me');
+  const availableStars = Number(me?.balance?.available ?? 0);
+  if (availableStars < estimatedStars) {
+    showToast(t('toastNoBalance'));
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = t('precheckRun');
+  }
+
+  const run = await api('POST', '/api/skill-check/run', {
+    title: `${skill.title} (buyer-precheck)`,
+    skillText: skill.content,
+    mode: 'hybrid'
+  });
+
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = t('precheckBtn');
+  }
+  if (!run || run.error) {
+    showToast(run?.error || t('toastError'));
+    return;
+  }
+
+  const score = Number(run.report?.uniquenessScore ?? 0);
+  const risk = String(run.report?.riskLevel ?? 'unknown');
+  if (resultEl) {
+    resultEl.style.display = '';
+    resultEl.textContent = `${t('precheckDone')}: ${score}% | risk: ${risk}`;
+  }
+  loadBalance();
+}
+
 // ── Skill detail modal ────────────────────────────────────────────────────────
 function showSkillDetail(skillId) {
   const s = getAllSkills().find(x => x.id === skillId);
@@ -705,6 +770,11 @@ function showSkillDetail(skillId) {
              </div>`
           : ''
         }
+        ${!alreadyOwned
+          ? `<button class="btn btn-secondary btn-full" id="modalPrecheckBtn">${t('precheckBtn')}</button>
+             <div id="modalPrecheckResult" class="text-hint" style="font-size:13px;margin-top:8px;display:none"></div>`
+          : ''
+        }
         <button class="btn ${isFree ? 'btn-success' : 'btn-primary'} btn-full" id="modalPrimaryAction">
           ${alreadyOwned ? t('copyContentBtn') : (isFree ? t('getBtn') : `${SD} ${t('buyBtn')} — ${s.price.toLocaleString()} ✨`)}
         </button>
@@ -714,8 +784,11 @@ function showSkillDetail(skillId) {
   modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
   document.body.appendChild(modal);
   const primaryBtn = modal.querySelector('#modalPrimaryAction');
+  const precheckBtn = modal.querySelector('#modalPrecheckBtn');
+  const precheckResult = modal.querySelector('#modalPrecheckResult');
   const closeBtn = modal.querySelector('#modalCloseBtn');
   closeBtn?.addEventListener('click', closeModal);
+  precheckBtn?.addEventListener('click', () => runBuyerPrecheck(s, precheckBtn, precheckResult));
   if (alreadyOwned) {
     if (primaryBtn) primaryBtn.className = 'btn btn-secondary btn-full';
     primaryBtn?.addEventListener('click', async () => {
