@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
+import { config } from "../config.js";
 import { createWithdrawalRequest } from "../services/billing.js";
 import type { AuthedRequest } from "../types.js";
 
@@ -11,6 +12,11 @@ const requestSchema = z.object({
 export const withdrawalsRouter = Router();
 
 withdrawalsRouter.post("/request", requireAuth, async (req: AuthedRequest, res) => {
+  if (!config.WITHDRAWALS_ENABLED) {
+    res.status(403).json({ error: "Withdrawals are temporarily disabled in MVP" });
+    return;
+  }
+
   const parsed = requestSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });

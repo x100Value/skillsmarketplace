@@ -16,6 +16,9 @@ export type VerifiedInitData = {
 };
 
 function timingSafeEqualHex(a: string, b: string): boolean {
+  if (!/^[0-9a-f]{64}$/i.test(a) || !/^[0-9a-f]{64}$/i.test(b)) {
+    return false;
+  }
   const aBuf = Buffer.from(a, "hex");
   const bBuf = Buffer.from(b, "hex");
   if (aBuf.length !== bBuf.length) {
@@ -65,6 +68,9 @@ export function verifyTelegramInitData(initData: string): VerifiedInitData {
   const now = Math.floor(Date.now() / 1000);
   if (now - authDate > config.AUTH_MAX_AGE_SECONDS) {
     throw new Error("initData expired");
+  }
+  if (authDate - now > 30) {
+    throw new Error("Invalid auth_date");
   }
 
   const userRaw = map.user;

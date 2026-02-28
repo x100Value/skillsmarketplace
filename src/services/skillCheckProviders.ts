@@ -25,6 +25,16 @@ function dedupeSources(sources: SkillSource[]): SkillSource[] {
   return unique;
 }
 
+async function fetchWithTimeout(
+  input: string | URL,
+  init: RequestInit
+): Promise<Response> {
+  return fetch(input, {
+    ...init,
+    signal: AbortSignal.timeout(config.OUTBOUND_HTTP_TIMEOUT_MS)
+  });
+}
+
 export async function freeSearch(query: string): Promise<SkillSource[]> {
   const url = new URL(config.SKILLCHECK_FREE_SEARCH_ENDPOINT);
   url.searchParams.set("q", query);
@@ -32,7 +42,7 @@ export async function freeSearch(query: string): Promise<SkillSource[]> {
   url.searchParams.set("no_html", "1");
   url.searchParams.set("skip_disambig", "1");
 
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     method: "GET",
     headers: {
       accept: "application/json"
@@ -84,7 +94,7 @@ export async function paidSearch(query: string): Promise<SkillSource[]> {
     throw new Error("Paid search API key is missing");
   }
 
-  const response = await fetch(config.SKILLCHECK_PAID_SEARCH_ENDPOINT, {
+  const response = await fetchWithTimeout(config.SKILLCHECK_PAID_SEARCH_ENDPOINT, {
     method: "POST",
     headers: {
       "content-type": "application/json",

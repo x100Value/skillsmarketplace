@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import type { PoolClient } from "pg";
 import { pool } from "../db.js";
+import { config } from "../config.js";
 import { writeAuditLog } from "./audit.js";
 
 type BalanceRow = {
@@ -52,10 +53,21 @@ export async function creditFromPayment(input: {
   amountStars: number;
   status: string;
   payload: unknown;
+  client?: PoolClient;
 }): Promise<{ applied: boolean }> {
-  const client = await pool.connect();
+  if (!Number.isSafeInteger(input.amountStars) || input.amountStars <= 0) {
+    throw new Error("Invalid payment amount");
+  }
+  if (input.status !== "paid") {
+    throw new Error("Invalid payment status");
+  }
+
+  const client = input.client ?? (await pool.connect());
+  const ownsTx = !input.client;
   try {
-    await client.query("BEGIN");
+    if (ownsTx) {
+      await client.query("BEGIN");
+    }
 
     const inserted = await client.query(
       `INSERT INTO payment_events (
@@ -73,7 +85,9 @@ export async function creditFromPayment(input: {
     );
 
     if (inserted.rowCount === 0) {
-      await client.query("ROLLBACK");
+      if (ownsTx) {
+        await client.query("ROLLBACK");
+      }
       return { applied: false };
     }
 
@@ -105,8 +119,144 @@ export async function creditFromPayment(input: {
       }
     });
 
-    await client.query("COMMIT");
+    if (ownsTx) {
+      await client.query("COMMIT");
+    }
     return { applied: true };
+  } catch (error) {
+    if (ownsTx) {
+      await client.query("ROLLBACK");
+    }
+    throw error;
+  } finally {
+    if (ownsTx) {
+      client.release();
+    }
+  }
+}
+
+export async function adminGrantStars(input: {
+  userId: number;
+  amountStars: number;
+  adminActorId: string;
+  reason?: string;
+}): Promise<{ amountStars: number }> {
+  if (!Number.isSafeInteger(input.amountStars) || input.amountStars <= 0) {
+    throw new Error("Invalid top up amount");
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await lockBalance(client, input.userId);
+
+    await client.query(
+      `UPDATE balances
+       SET total_stars = total_stars + $2,
+           updated_at = NOW()
+       WHERE user_id = $1`,
+      [input.userId, input.amountStars]
+    );
+
+    const refId = uuidv4();
+    await client.query(
+      `INSERT INTO ledger_entries (user_id, type, amount_stars, ref_type, ref_id, metadata)
+       VALUES ($1, 'admin_credit', $2, 'admin_grant', $3, $4::jsonb)`,
+      [
+        input.userId,
+        input.amountStars,
+        refId,
+        JSON.stringify({
+          adminActorId: input.adminActorId,
+          reason: input.reason ?? null
+        })
+      ]
+    );
+
+    await writeAuditLog(client, {
+      actorType: "admin",
+      actorId: input.adminActorId,
+      action: "admin_grant_stars",
+      entityType: "user",
+      entityId: String(input.userId),
+      metadata: { amountStars: input.amountStars, reason: input.reason ?? null }
+    });
+
+    await client.query("COMMIT");
+    return { amountStars: input.amountStars };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function purchaseDemoSkill(input: {
+  userId: number;
+  skillId: string;
+  amountStars: number;
+}): Promise<{ chargedStars: number }> {
+  if (!input.skillId || input.skillId.length > 64) {
+    throw new Error("Invalid skill id");
+  }
+  if (!Number.isSafeInteger(input.amountStars) || input.amountStars <= 0) {
+    throw new Error("Invalid purchase amount");
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const balance = await lockBalance(client, input.userId);
+    const existingPurchase = await client.query<{ id: string }>(
+      `SELECT ref_id AS id
+       FROM ledger_entries
+       WHERE user_id = $1
+         AND type = 'demo_purchase'
+         AND metadata->>'skillId' = $2
+       LIMIT 1`,
+      [input.userId, input.skillId]
+    );
+    if (existingPurchase.rows[0]) {
+      throw new Error("Skill already purchased");
+    }
+
+    const available = balance.total - balance.held;
+    if (available < input.amountStars) {
+      throw new Error("Insufficient available balance");
+    }
+
+    await client.query(
+      `UPDATE balances
+       SET total_stars = total_stars - $2,
+           updated_at = NOW()
+       WHERE user_id = $1`,
+      [input.userId, input.amountStars]
+    );
+
+    const refId = uuidv4();
+    await client.query(
+      `INSERT INTO ledger_entries (user_id, type, amount_stars, ref_type, ref_id, metadata)
+       VALUES ($1, 'demo_purchase', $2, 'demo_skill', $3, $4::jsonb)`,
+      [
+        input.userId,
+        input.amountStars,
+        refId,
+        JSON.stringify({ skillId: input.skillId })
+      ]
+    );
+
+    await writeAuditLog(client, {
+      actorType: "user",
+      actorId: String(input.userId),
+      action: "demo_skill_purchased",
+      entityType: "demo_skill",
+      entityId: input.skillId,
+      metadata: { amountStars: input.amountStars }
+    });
+
+    await client.query("COMMIT");
+    return { chargedStars: input.amountStars };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -235,6 +385,10 @@ export async function createWithdrawalRequest(input: {
   userId: number;
   amountStars: number;
 }): Promise<{ withdrawalId: string }> {
+  if (!Number.isSafeInteger(input.amountStars) || input.amountStars <= 0) {
+    throw new Error("Invalid withdrawal amount");
+  }
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -245,6 +399,9 @@ export async function createWithdrawalRequest(input: {
     }
 
     const withdrawalId = uuidv4();
+    const availableAt = new Date(
+      Date.now() + config.WITHDRAW_HOLD_DAYS * 24 * 60 * 60 * 1000
+    );
 
     await client.query(
       `UPDATE balances
@@ -255,9 +412,9 @@ export async function createWithdrawalRequest(input: {
     );
 
     await client.query(
-      `INSERT INTO withdrawals (id, user_id, amount_stars, status)
-       VALUES ($1, $2, $3, 'pending')`,
-      [withdrawalId, input.userId, input.amountStars]
+      `INSERT INTO withdrawals (id, user_id, amount_stars, status, available_at)
+       VALUES ($1, $2, $3, 'pending', $4)`,
+      [withdrawalId, input.userId, input.amountStars, availableAt]
     );
 
     await client.query(
@@ -292,6 +449,7 @@ export async function listWithdrawals(status?: string): Promise<
     amountStars: number;
     status: string;
     requestedAt: string;
+    availableAt: string | null;
   }>
 > {
   const params: unknown[] = [];
@@ -307,8 +465,9 @@ export async function listWithdrawals(status?: string): Promise<
     amount_stars: string;
     status: string;
     requested_at: string;
+    available_at: string | null;
   }>(
-    `SELECT w.id, w.user_id, w.amount_stars, w.status, w.requested_at
+    `SELECT w.id, w.user_id, w.amount_stars, w.status, w.requested_at, w.available_at
      FROM withdrawals w
      ${where}
      ORDER BY requested_at DESC
@@ -321,7 +480,8 @@ export async function listWithdrawals(status?: string): Promise<
     userId: row.user_id,
     amountStars: Number(row.amount_stars),
     status: row.status,
-    requestedAt: row.requested_at
+    requestedAt: row.requested_at,
+    availableAt: row.available_at
   }));
 }
 
@@ -339,8 +499,9 @@ export async function decideWithdrawal(input: {
       user_id: string;
       amount_stars: string;
       status: string;
+      available_at: string | null;
     }>(
-      `SELECT id, user_id, amount_stars, status
+      `SELECT id, user_id, amount_stars, status, available_at
        FROM withdrawals
        WHERE id = $1
        FOR UPDATE`,
@@ -356,10 +517,15 @@ export async function decideWithdrawal(input: {
 
     const userId = Number(row.user_id);
     const amountStars = Number(row.amount_stars);
+    const availableAt = row.available_at ? new Date(row.available_at) : null;
 
     await lockBalance(client, userId);
 
     if (input.decision === "approve") {
+      if (availableAt && availableAt.getTime() > Date.now()) {
+        throw new Error(`Withdrawal is on hold until ${availableAt.toISOString()}`);
+      }
+
       await client.query(
         `UPDATE balances
          SET held_stars = held_stars - $2,

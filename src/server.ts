@@ -17,16 +17,84 @@ import { historyRouter } from "./routes/history.js";
 import { skillCheckRouter } from "./routes/skillCheck.js";
 
 const app = express();
+const allowedOrigins = new Set(config.CORS_ALLOW_ORIGINS);
+
+app.disable("x-powered-by");
+app.set("trust proxy", config.TRUST_PROXY);
 
 app.use(pinoHttp({ logger }));
-app.use(helmet());
-app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(
+  helmet({
+    frameguard: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        objectSrc: ["'none'"],
+        scriptSrc: ["'self'", "https://telegram.org"],
+        styleSrc: ["'self'", "https:", "'unsafe-inline'"],
+        imgSrc: ["'self'", "https:", "data:"],
+        fontSrc: ["'self'", "https:", "data:"],
+        connectSrc: ["'self'", "https://api.openai.com"],
+        frameAncestors: [
+          "'self'",
+          "https://web.telegram.org",
+          "https://webk.telegram.org",
+          "https://*.telegram.org"
+        ],
+        upgradeInsecureRequests: []
+      }
+    }
+  })
+);
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin || allowedOrigins.has(origin)) {
+        cb(null, true);
+        return;
+      }
+      cb(null, false);
+    },
+    methods: ["GET", "POST", "OPTIONS"],
+    maxAge: 86400
+  })
+);
+app.use(express.json({ limit: "1mb", strict: true }));
 
-app.use(rateLimit({ windowMs: 60_000, max: 120 }));
+app.use(
+  rateLimit({
+    windowMs: config.RATE_LIMIT_WINDOW_MS,
+    max: config.RATE_LIMIT_MAX
+  })
+);
+app.use(
+  "/api/auth/telegram",
+  rateLimit({
+    windowMs: config.RATE_LIMIT_WINDOW_MS,
+    max: config.RATE_LIMIT_AUTH_MAX
+  })
+);
+app.use(
+  "/api/payments/telegram/webhook",
+  rateLimit({
+    windowMs: config.RATE_LIMIT_WINDOW_MS,
+    max: config.RATE_LIMIT_WEBHOOK_MAX,
+    key: (req) =>
+      `webhook:${req.ip ?? "unknown"}:${String(req.header("x-telegram-bot-api-secret-token") ?? "").slice(0, 12)}`
+  })
+);
+app.use(
+  "/api/admin",
+  rateLimit({
+    windowMs: config.RATE_LIMIT_WINDOW_MS,
+    max: config.RATE_LIMIT_ADMIN_MAX
+  })
+);
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, env: config.NODE_ENV });
+  res.json({ ok: true });
 });
 
 app.use("/api/auth", authRouter);

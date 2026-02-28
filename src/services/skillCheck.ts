@@ -157,6 +157,7 @@ async function generateSummaryWithModel(input: {
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
+    signal: AbortSignal.timeout(config.OUTBOUND_HTTP_TIMEOUT_MS),
     headers: {
       "content-type": "application/json",
       authorization: `Bearer ${config.SKILLCHECK_LLM_API_KEY}`

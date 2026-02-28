@@ -1,207 +1,337 @@
 <!doctype html>
-<html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SkillsMarketplace</title>
-    <link rel="stylesheet" href="/styles.css" />
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  </head>
-  <body class="app-body">
-    <main class="app-shell">
-      <header class="topbar">
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>SkillsMarketplace</title>
+  <link rel="stylesheet" href="/styles.css?v=8"/>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+<!-- Auth Overlay -->
+<div id="authOverlay" style="display:none">
+  <div class="auth-logo">🤖</div>
+  <div class="auth-title" data-i18n="authTitle">SkillsMarketplace</div>
+  <div class="auth-sub" data-i18n="authSub">Marketplace for AI Agent Skills</div>
+  <button id="authBtn" class="btn btn-primary btn-full" style="max-width:280px" data-i18n="authBtn">
+    Continue with Telegram
+  </button>
+  <p id="authError" class="text-hint" style="font-size:13px;display:none"></p>
+</div>
+
+<!-- Main App -->
+<div class="app-root" id="appRoot">
+
+  <!-- ── MARKET SCREEN ──────────────────────────────────────────────────── -->
+  <div class="screen active" id="screen-market">
+
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input id="searchInput" type="text" data-i18n-placeholder="searchPlaceholder" placeholder="Search skills..."/>
+    </div>
+
+    <div class="filter-row" id="filterRow">
+      <div class="filter-chip active" data-cat="all"   data-i18n="catAll">All</div>
+      <div class="filter-chip"        data-cat="agent"  data-i18n="catAgents">Agents</div>
+      <div class="filter-chip"        data-cat="auto"   data-i18n="catAuto">Automation</div>
+      <div class="filter-chip"        data-cat="data"   data-i18n="catData">Analytics</div>
+      <div class="filter-chip"        data-cat="write"  data-i18n="catWrite">Writing</div>
+      <div class="filter-chip"        data-cat="sales"  data-i18n="catSales">Sales</div>
+    </div>
+
+    <div class="section-title" data-i18n="featuredTitle">Featured</div>
+    <div class="skills-grid" id="skillsGrid"></div>
+
+    <div class="section-title" data-i18n="newTitle">New</div>
+    <div class="skills-grid" id="skillsGridNew"></div>
+
+  </div>
+
+  <!-- ── STUDIO SCREEN ─────────────────────────────────────────────────── -->
+  <div class="screen" id="screen-studio">
+
+    <!-- Balance -->
+    <div class="card balance-card">
+      <div class="balance-label" data-i18n="yourBalance">Your Balance</div>
+      <div class="balance-amount"><span id="studioBalance">0</span> ✨</div>
+      <div class="balance-row">
+        <div class="balance-item">
+          <div class="balance-item-label" data-i18n="heldLabel">Held</div>
+          <div class="balance-item-val" id="studioHeld">0</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-item-label" data-i18n="availableLabel">Available</div>
+          <div class="balance-item-val" id="studioAvailable">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skill Check -->
+    <div class="card">
+      <div class="card-head">
         <div>
-          <h1>SkillsMarketplace</h1>
-          <p class="muted">Pro AI Tool in Telegram</p>
+          <div class="card-title" data-i18n="checkTitle">Skill Uniqueness Check</div>
+          <div class="card-sub" data-i18n="checkSub">Verify before publishing</div>
         </div>
-        <span id="authBadge" class="status-chip chip-muted">Guest</span>
-      </header>
+        <button class="btn btn-secondary btn-sm" id="toggleCheckForm" data-i18n="openBtn">Open</button>
+      </div>
 
-      <section class="card auth-card">
-        <div class="card-head">
-          <h2>Access</h2>
-          <button id="meBtn" class="btn-secondary">Refresh</button>
+      <div id="checkForm" style="display:none">
+        <div class="form-group">
+          <label class="form-label" data-i18n="skillTitleLabel">Skill title</label>
+          <input id="skillTitleInput" class="form-input" type="text" maxlength="160"
+            data-i18n-placeholder="skillTitlePlaceholder" placeholder="Telegram Lead Qualification Agent"/>
         </div>
-        <textarea
-          id="initDataInput"
-          rows="2"
-          placeholder="Telegram initData (fallback for local debug)"
-        ></textarea>
-        <div class="row-actions">
-          <button id="authBtn" class="btn-primary">Continue with Telegram</button>
+        <div class="form-group">
+          <label class="form-label" data-i18n="providerModeLabel">Search mode</label>
+          <div class="text-hint" style="font-size:13px" data-i18n="checkModeHint">MVP mode: Hybrid (safe default)</div>
+          <input id="skillModeInput" type="hidden" value="hybrid"/>
         </div>
-        <p id="authState" class="muted">Not authorized</p>
-      </section>
+        <div class="form-group">
+          <label class="form-label" data-i18n="skillTextLabel">Skill / Prompt text</label>
+          <textarea id="skillTextInput" class="form-textarea"
+            data-i18n-placeholder="skillTextPlaceholder"
+            placeholder="Paste your full skill or prompt text here (min 80 chars)"></textarea>
+        </div>
 
-      <section id="tab-home" class="tab-panel active">
-        <article class="card hero-card">
-          <h2>Dashboard</h2>
-          <p class="muted">One tap to start. Credits and usage are always visible.</p>
-          <div class="metrics">
-            <div class="metric">
-              <span class="label">Balance</span>
-              <strong id="homeBalance">0</strong>
-            </div>
-            <div class="metric">
-              <span class="label">Available</span>
-              <strong id="homeAvailable">0</strong>
-            </div>
-          </div>
-          <div class="row-actions">
-            <button id="primaryActionBtn" class="btn-primary">Check Skill</button>
-            <button id="tryDemoBtn" class="btn-secondary">Try Demo</button>
-          </div>
-        </article>
+        <div class="status-row" id="checkStatusRow" style="display:none">
+          <div class="status-dot" id="checkStatusDot"></div>
+          <span id="checkStatusText" class="text-hint" style="font-size:13px"></span>
+          <span id="checkPrice" style="margin-left:auto;font-size:13px;font-weight:700"></span>
+        </div>
 
-        <article class="card">
-          <div class="card-head">
-            <h2>Last Activity</h2>
-            <button id="homeRefreshBtn" class="btn-secondary">Refresh</button>
-          </div>
-          <ul id="lastActivityList" class="activity-list"></ul>
-        </article>
-      </section>
+        <div class="gap-8 mt-12">
+          <button id="quoteBtn" class="btn btn-secondary w-full" data-i18n="getQuoteBtn">Get Quote</button>
+          <button id="runBtn"   class="btn btn-primary w-full"   data-i18n="runCheckBtn">Run Check</button>
+        </div>
 
-      <section id="tab-tool" class="tab-panel">
-        <article class="card">
-          <h2>Skill Uniqueness Check</h2>
-          <p class="muted">
-            Dedicated verifier mode. It does not work as a chatbot and only returns
-            uniqueness analysis.
-          </p>
-          <div class="row">
-            <label for="skillTitleInput">Skill title</label>
-            <input
-              id="skillTitleInput"
-              type="text"
-              maxlength="160"
-              placeholder="Example: Telegram Lead Qualification Agent"
-            />
-          </div>
-          <div class="row">
-            <label for="skillModeInput">Provider mode</label>
-            <select id="skillModeInput">
-              <option value="hybrid">Hybrid (paid fallback to free)</option>
-              <option value="paid">Paid only</option>
-              <option value="free">Free only</option>
-            </select>
-          </div>
-          <textarea
-            id="skillTextInput"
-            rows="8"
-            placeholder="Paste your full skill/prompt text (min 80 chars)"
-          ></textarea>
-          <div class="inline-status">
-            <span class="label">Estimated price</span>
-            <span id="toolPrice" class="status-chip chip-muted">not calculated</span>
-          </div>
-          <div class="row-actions">
-            <button id="quoteBtn" class="btn-secondary">Get Quote</button>
-            <button id="runBtn" class="btn-primary">Run Check</button>
-          </div>
-          <div class="inline-status">
-            <span class="label">Status</span>
-            <span id="toolStatus" class="status-chip chip-muted">idle</span>
-          </div>
-          <pre id="toolQuote"></pre>
-          <pre id="skillReport"></pre>
-          <pre id="taskResult"></pre>
-        </article>
-      </section>
-
-      <section id="tab-history" class="tab-panel">
-        <article class="card">
-          <div class="card-head">
-            <h2>History</h2>
-            <button id="historyRefreshBtn" class="btn-secondary">Refresh</button>
-          </div>
-          <ul id="historyList" class="activity-list"></ul>
-        </article>
-      </section>
-
-      <section id="tab-wallet" class="tab-panel">
-        <article class="card">
-          <h2>Wallet / Billing</h2>
-          <div class="metrics">
-            <div class="metric">
-              <span class="label">Total</span>
-              <strong id="walletTotal">0</strong>
-            </div>
-            <div class="metric">
-              <span class="label">Held</span>
-              <strong id="walletHeld">0</strong>
-            </div>
-            <div class="metric">
-              <span class="label">Available</span>
-              <strong id="walletAvailable">0</strong>
+        <!-- Report -->
+        <div id="reportCard" class="card report-card" style="display:none">
+          <div class="score-ring">
+            <div id="scoreNum" class="score-num">—</div>
+            <div>
+              <div id="riskChip" class="chip">—</div>
+              <div class="score-label" data-i18n="uniquenessScore">Uniqueness score</div>
             </div>
           </div>
-        </article>
+          <div id="reportSummary" style="font-size:14px;color:var(--hint);margin-bottom:10px"></div>
+          <button id="publishSkillBtn" class="btn btn-primary btn-full" style="display:none;margin-bottom:8px" data-i18n="publishSkillBtn">Publish Skill</button>
+          <pre id="reportRaw" class="code-block" style="display:none"></pre>
+          <button id="toggleRaw" class="btn btn-secondary btn-sm btn-full mt-8" data-i18n="showRaw">Show details</button>
+        </div>
+      </div>
+    </div>
 
-        <article class="card">
-          <h2>Top Up (Telegram Stars)</h2>
-          <p class="muted">Instant access via Telegram Stars.</p>
-          <div class="row-actions">
-            <button class="btn-secondary topup-btn" data-package="100">100 credits</button>
-            <button class="btn-secondary topup-btn" data-package="500">500 credits</button>
-            <button class="btn-secondary topup-btn" data-package="1000">1000 credits</button>
-          </div>
-        </article>
+  </div>
 
-        <article class="card">
-          <h2>Advanced Payments (Crypto)</h2>
-          <p class="muted">For power users and large deposits.</p>
-          <a class="text-link" href="/pro" target="_blank" rel="noreferrer"
-            >Open Pro Dashboard</a
-          >
-        </article>
+  <!-- ── ACCOUNT SCREEN ─────────────────────────────────────────────────── -->
+  <div class="screen" id="screen-account">
 
-        <article class="card">
-          <h2>Withdrawal</h2>
-          <div class="row">
-            <label for="withdrawInput">Request amount (stars)</label>
-            <input id="withdrawInput" type="number" min="1" value="50" />
-          </div>
-          <button id="withdrawBtn" class="btn-primary">Create Request</button>
-        </article>
-      </section>
+    <!-- Profile -->
+    <div class="card" id="withdrawCard">
+      <div class="profile-card">
+        <div class="profile-avatar" id="profileAvatar">?</div>
+        <div>
+          <div class="profile-name" id="profileName">—</div>
+          <div class="profile-id"   id="profileId">—</div>
+        </div>
+        <div id="profileBadge" class="chip" style="margin-left:auto"></div>
+      </div>
+    </div>
 
-      <section id="tab-settings" class="tab-panel">
-        <article class="card">
-          <h2>Settings</h2>
-          <button id="logoutBtn" class="btn-secondary">Log out</button>
-        </article>
-        <article class="card">
-          <h2>Legal</h2>
-          <p class="muted">Актуальные документы сервиса и правила обработки данных.</p>
-          <a class="text-link legal-link" href="/legal" target="_blank" rel="noreferrer"
-            >Open Legal Center</a
-          >
-          <a class="text-link legal-link" href="/docs/LEGAL_OFFER_RU.md" target="_blank" rel="noreferrer"
-            >Public Offer</a
-          >
-          <a class="text-link legal-link" href="/docs/PRIVACY_POLICY_RU.md" target="_blank" rel="noreferrer"
-            >Privacy Policy</a
-          >
-          <a class="text-link legal-link" href="/docs/REFUND_POLICY_RU.md" target="_blank" rel="noreferrer"
-            >Refund Rules</a
-          >
-        </article>
-        <article class="card">
-          <h2>Debug Log</h2>
-          <pre id="log"></pre>
-        </article>
-      </section>
-    </main>
+    <!-- Wallet -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title" data-i18n="walletTitle">Wallet</div>
+          <div class="card-sub" data-i18n="walletSub">Top up and withdrawals</div>
+        </div>
+      </div>
 
-    <nav class="bottom-nav">
-      <button class="tab-btn active" data-tab="home">Home</button>
-      <button class="tab-btn" data-tab="tool">Tool</button>
-      <button class="tab-btn" data-tab="history">History</button>
-      <button class="tab-btn" data-tab="wallet">Wallet</button>
-      <button class="tab-btn" data-tab="settings">Settings</button>
-    </nav>
+      <div class="balance-row">
+        <div class="balance-item">
+          <div class="balance-item-label" data-i18n="yourBalance">Your Balance</div>
+          <div class="balance-item-val"><span id="accountBalance">0</span> ✨</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-item-label" data-i18n="heldLabel">Held</div>
+          <div class="balance-item-val" id="accountHeld">0</div>
+        </div>
+      </div>
+      <div class="balance-row">
+        <div class="balance-item">
+          <div class="balance-item-label" data-i18n="availableLabel">Available</div>
+          <div class="balance-item-val" id="accountAvailable">0</div>
+        </div>
+        <div class="balance-item">
+          <div class="balance-item-label">⭐ Stars</div>
+          <div class="balance-item-val" id="accountStars">0</div>
+        </div>
+      </div>
 
-    <script type="module" src="/app.js"></script>
-  </body>
+      <div class="card-head mt-12" style="margin-bottom:8px">
+        <div>
+          <div class="card-title" data-i18n="topUpTitle">Top Up</div>
+          <div class="card-sub" data-i18n="topUpSub">Buy Stardust via Telegram Stars</div>
+        </div>
+      </div>
+      <div class="topup-grid">
+        <button class="btn btn-secondary topup-btn" data-stars="100">⭐ 100</button>
+        <button class="btn btn-secondary topup-btn" data-stars="500">⭐ 500</button>
+        <button class="btn btn-secondary topup-btn" data-stars="1000">⭐ 1000</button>
+      </div>
+    </div>
+
+    <!-- Admin Test Top-up -->
+    <div class="card" id="adminTopupCard" style="display:none">
+      <div class="card-head">
+        <div>
+          <div class="card-title" data-i18n="adminTopupTitle">Admin Test Balance</div>
+          <div class="card-sub" data-i18n="adminTopupSub">Quickly add Stars for test purchases</div>
+        </div>
+      </div>
+      <div class="topup-grid">
+        <button class="btn btn-secondary admin-topup-btn" data-stars="500">+⭐ 500</button>
+        <button class="btn btn-secondary admin-topup-btn" data-stars="2000">+⭐ 2,000</button>
+        <button class="btn btn-secondary admin-topup-btn" data-stars="5000">+⭐ 5,000</button>
+      </div>
+    </div>
+
+    <!-- Withdrawal -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title" data-i18n="withdrawTitle">Withdrawal</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="withdrawLabel">Amount (Stardust)</label>
+        <input id="withdrawInput" class="form-input" type="number" min="10" step="10" value="500"/>
+        <div class="text-hint" style="font-size:12px" data-i18n="withdrawHoldHint">
+          Funds are held for 22 days before payout decision.
+        </div>
+      </div>
+      <button id="withdrawBtn" class="btn btn-secondary btn-full" data-i18n="withdrawBtn">Create Request</button>
+    </div>
+
+    <!-- Library -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title" data-i18n="libraryTitle">My Library</div>
+          <div class="card-sub" data-i18n="librarySub">Purchased and free claimed skills</div>
+        </div>
+      </div>
+      <div class="history-list" id="libraryList"></div>
+    </div>
+
+    <!-- Referral Program -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title" data-i18n="refTitle">Referral Program</div>
+          <div class="card-sub"   data-i18n="refSub">Earn from your network</div>
+        </div>
+      </div>
+
+      <div class="ref-levels">
+        <div class="ref-level">
+          <div class="ref-level-num"  data-i18n="level1">Level 1</div>
+          <div class="ref-level-pct">3%</div>
+          <div class="ref-level-earn" id="refEarn1">0 ⭐</div>
+        </div>
+        <div class="ref-level">
+          <div class="ref-level-num"  data-i18n="level2">Level 2</div>
+          <div class="ref-level-pct">2%</div>
+          <div class="ref-level-earn" id="refEarn2">0 ⭐</div>
+        </div>
+        <div class="ref-level">
+          <div class="ref-level-num"  data-i18n="level3">Level 3</div>
+          <div class="ref-level-pct">1%</div>
+          <div class="ref-level-earn" id="refEarn3">0 ⭐</div>
+        </div>
+      </div>
+
+      <div class="ref-link-box">
+        <span class="ref-link-text" id="refLinkText">—</span>
+        <button class="btn btn-secondary btn-sm" id="copyRefBtn" data-i18n="copyBtn">Copy</button>
+      </div>
+
+      <div class="ref-total">
+        <span class="text-hint" data-i18n="totalEarned">Total earned:</span>
+        <span id="refTotalEarned" class="fw-700">0 ⭐</span>
+      </div>
+    </div>
+
+    <!-- Language -->
+    <div class="card card-sm">
+      <div class="card-head" style="margin-bottom:10px">
+        <div class="card-title" data-i18n="languageTitle">Language</div>
+      </div>
+      <div class="lang-row">
+        <button class="lang-btn" data-lang="ru" id="langRu">🇷🇺 Русский</button>
+        <button class="lang-btn" data-lang="en" id="langEn">🇬🇧 English</button>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title" data-i18n="historyTitle">History</div>
+        <button class="btn btn-secondary btn-sm" id="historyRefreshBtn" data-i18n="refreshBtn">Refresh</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="card">
+      <div class="settings-item" id="settingsLegal">
+        <div class="settings-item-left">
+          <span class="settings-item-icon">📄</span>
+          <span class="settings-item-label" data-i18n="legalTitle">Legal</span>
+        </div>
+        <span class="settings-item-arrow">›</span>
+      </div>
+      <div class="settings-item" id="settingsLogout">
+        <div class="settings-item-left">
+          <span class="settings-item-icon">🚪</span>
+          <span class="settings-item-label" style="color:var(--danger)" data-i18n="logoutBtn">Log out</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legal links (hidden by default, toggled) -->
+    <div class="card" id="legalCard" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <a class="text-link" href="/legal"                     target="_blank" data-legal="openLegal">Legal Center</a>
+        <a class="text-link" href="/doc?f=LEGAL_OFFER_RU.md"    target="_blank" data-legal="publicOffer">Public Offer</a>
+        <a class="text-link" href="/doc?f=PRIVACY_POLICY_RU.md" target="_blank" data-legal="privacyPolicy">Privacy Policy</a>
+        <a class="text-link" href="/doc?f=REFUND_POLICY_RU.md"  target="_blank" data-legal="refundRules">Refund Rules</a>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /app-root -->
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-btn active" data-screen="market">
+    <span class="nav-icon">🏪</span>
+    <span data-i18n="tabMarket">Market</span>
+  </button>
+  <button class="nav-btn" data-screen="studio">
+    <span class="nav-icon">⚡</span>
+    <span data-i18n="tabStudio">Studio</span>
+  </button>
+  <button class="nav-btn" data-screen="account">
+    <span class="nav-icon">👤</span>
+    <span data-i18n="tabAccount">Account</span>
+  </button>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script type="module" src="/app.js?v=8"></script>
+</body>
 </html>
