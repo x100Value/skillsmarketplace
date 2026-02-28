@@ -235,6 +235,42 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
+const WM0 = '\u200B';
+const WM1 = '\u200C';
+const WMS = '\u200D';
+
+function encodeInvisibleWatermark(text) {
+  const bytes = new TextEncoder().encode(text);
+  let out = '';
+  for (const byte of bytes) {
+    out += byte
+      .toString(2)
+      .padStart(8, '0')
+      .replaceAll('0', WM0)
+      .replaceAll('1', WM1);
+    out += WMS;
+  }
+  return out;
+}
+
+function buildWatermarkPayload(skillId) {
+  const uid = String(
+    currentUser?.telegramUserId ??
+    tg?.initDataUnsafe?.user?.id ??
+    'anon'
+  );
+  const uname = String(currentUser?.username ?? tg?.initDataUnsafe?.user?.username ?? 'unknown');
+  return `SM|u:${uid}|n:${uname}|s:${skillId}|t:${Date.now()}`;
+}
+
+function buildProtectedExportContent(skill) {
+  const plain = String(skill?.content ?? '');
+  const payload = buildWatermarkPayload(skill?.id ?? 'na');
+  const hidden = encodeInvisibleWatermark(payload);
+  const visibleFingerprint = `\n\n[SM-LICENSE] buyer=${currentUser?.username ?? currentUser?.telegramUserId ?? 'anon'} skill=${skill?.id ?? 'na'}`;
+  return plain + visibleFingerprint + hidden;
+}
+
 function toggleWithdrawalCard(isVisible) {
   const card = document.getElementById('withdrawCard');
   if (card) card.style.display = isVisible ? '' : 'none';
@@ -363,16 +399,247 @@ async function manualAuth(screen) {
 // ── Skill cards ───────────────────────────────────────────────────────────────
 // Prices are in Stardust directly
 const DEMO_SKILLS = [
-  { id:1,  icon:'🤖', title:'Telegram Lead Qualifier',  desc:'Qualifies leads from Telegram groups using NLP',      cat:'agent', price:2500, featured:true,  content:'System prompt + lead scoring flow for Telegram inbound leads.' },
-  { id:2,  icon:'✍️', title:'SEO Content Rewriter',     desc:'95%+ unique rewrites preserving full meaning',         cat:'write', price:1800, featured:true,  content:'Prompt template for rewrite modes: factual, engaging, concise.' },
-  { id:3,  icon:'💰', title:'Sales Funnel Automation',  desc:'Full CRM pipeline with AI qualification & follow-ups', cat:'sales', price:5000, featured:true,  content:'Pipeline map + message scripts + qualification logic.' },
-  { id:4,  icon:'📊', title:'Data Analytics Agent',     desc:'Insights & auto-charts from CSV/Excel data',           cat:'data',  price:3200, featured:true,  content:'Analysis prompt + chart generation checklist.' },
-  { id:5,  icon:'📅', title:'Social Media Scheduler',   desc:'AI content calendar, auto-posts to 5 platforms',       cat:'auto',  price:1500, featured:false, content:'Calendar generation template + posting rules.' },
-  { id:6,  icon:'💬', title:'Customer Support Bot',     desc:'FAQ, escalations and ticket creation on autopilot',    cat:'agent', price:4000, featured:false, content:'Support routing prompt + escalation conditions.' },
-  { id:7,  icon:'🧾', title:'Invoice Parser',            desc:'Extracts PDF invoice fields with 99% accuracy',        cat:'data',  price:0,    featured:false, content:'Demo parsing schema for invoice fields and totals.' },
-  { id:8,  icon:'📧', title:'Cold Email Writer',         desc:'Personalized outreach sequences with A/B variants',    cat:'sales', price:1200, featured:false, content:'Cold outreach prompt with personalization slots.' },
-  { id:9,  icon:'📰', title:'News Aggregator Agent',    desc:'Monitors 50+ sources, filters & sends digest',         cat:'auto',  price:800,  featured:false, content:'Digest prompt and ranking rules for source prioritization.' },
-  { id:10, icon:'📝', title:'Blog Post Generator',      desc:'Long-form SEO posts with meta tags & image prompts',   cat:'write', price:2000, featured:false, content:'Article generation template with SEO sections.' },
+  { id:1,  icon:'🤖', title:'Telegram Lead Qualifier',  desc:'Qualifies leads from Telegram groups using NLP',      cat:'agent', price:2500, featured:true,  content:`ROLE
+You are a Telegram Lead Qualification Agent for {{product_name}}.
+
+OBJECTIVE
+1) Classify lead intent (hot/warm/cold).
+2) Extract budget, timeline, authority, and use-case.
+3) Suggest next step and draft reply.
+
+INPUT
+{{lead_message}}
+{{chat_context}}
+{{pricing_rules}}
+
+RULES
+- Ask at most 2 clarifying questions.
+- Do not invent data.
+- If low intent: propose low-friction CTA.
+- If hot lead: ask for contact and preferred slot.
+
+OUTPUT JSON
+{
+  "intent": "hot|warm|cold",
+  "score_0_100": 0,
+  "facts": {
+    "budget": "",
+    "timeline": "",
+    "authority": "",
+    "use_case": ""
+  },
+  "next_step": "",
+  "reply_draft": ""
+}` },
+  { id:2,  icon:'✍️', title:'SEO Content Rewriter',     desc:'95%+ unique rewrites preserving full meaning',         cat:'write', price:1800, featured:true,  content:`ROLE
+You are an SEO Content Rewriter.
+
+INPUT
+mode={{mode}}  // factual | engaging | concise
+target_length={{target_words}}
+keywords={{keywords_csv}}
+source_text={{source_text}}
+
+GLOBAL RULES
+- Preserve factual meaning.
+- Keep keyword density natural.
+- Avoid plagiarism and cliches.
+- Use clear structure and subheadings.
+
+MODE RULES
+factual: neutral tone, exact claims, no fluff.
+engaging: stronger hooks, storytelling rhythm, active voice.
+concise: short sentences, remove redundancy, keep key info only.
+
+OUTPUT
+1) Rewritten article in Markdown.
+2) Meta title (<=60 chars).
+3) Meta description (<=155 chars).
+4) 5 semantic keyword suggestions.` },
+  { id:3,  icon:'💰', title:'Sales Funnel Automation',  desc:'Full CRM pipeline with AI qualification & follow-ups', cat:'sales', price:5000, featured:true,  content:`ROLE
+You are a Sales Funnel Architect for {{business_type}}.
+
+TASK
+Build a practical 5-stage funnel:
+1) Awareness
+2) Capture
+3) Qualification
+4) Offer
+5) Follow-up
+
+INPUT
+{{product}}
+{{target_audience}}
+{{price}}
+{{channels}}
+
+OUTPUT FORMAT
+- Funnel map per stage
+- Trigger event
+- Message template
+- Exit condition
+- KPI for each stage
+
+EXTRA
+Provide:
+- 3 follow-up sequences (D0, D2, D5)
+- objection handling snippets
+- one no-code automation outline.` },
+  { id:4,  icon:'📊', title:'Data Analytics Agent',     desc:'Insights & auto-charts from CSV/Excel data',           cat:'data',  price:3200, featured:true,  content:`ROLE
+You are a Data Analytics Agent.
+
+INPUT
+dataset_schema={{columns}}
+business_goal={{goal}}
+sample_rows={{rows}}
+
+TASKS
+1) Validate data quality.
+2) Detect key drivers and anomalies.
+3) Propose charts and interpretation.
+4) Recommend actions.
+
+OUTPUT
+- Data quality report (missing, duplicates, outliers)
+- Top 5 insights with evidence
+- Chart plan:
+  - chart_type
+  - x_axis
+  - y_axis
+  - why
+- Action list prioritized by impact/effort.` },
+  { id:5,  icon:'📅', title:'Social Media Scheduler',   desc:'AI content calendar, auto-posts to 5 platforms',       cat:'auto',  price:1500, featured:false, content:`ROLE
+You are a Social Media Planning Agent.
+
+INPUT
+brand={{brand}}
+niche={{niche}}
+platforms={{platforms}}
+posting_frequency={{frequency}}
+offers={{offers}}
+
+OUTPUT
+Generate a 14-day calendar:
+- day
+- platform
+- format (post/reel/story/thread)
+- hook
+- core message
+- CTA
+- hashtag set
+
+CONSTRAINTS
+- Balance education, proof, and promotion.
+- Avoid repeating hooks.
+- Respect platform style differences.` },
+  { id:6,  icon:'💬', title:'Customer Support Bot',     desc:'FAQ, escalations and ticket creation on autopilot',    cat:'agent', price:4000, featured:false, content:`ROLE
+You are L1 customer support for {{company}}.
+
+INPUT
+user_message={{message}}
+faq={{faq_blocks}}
+policy={{policy}}
+
+RULES
+- Resolve simple issues directly.
+- If account/payment/safety issue -> escalate.
+- Keep tone calm and concise.
+- Never expose internal notes.
+
+OUTPUT JSON
+{
+  "category": "billing|tech|policy|other",
+  "priority": "low|medium|high",
+  "resolved": true,
+  "answer": "",
+  "escalate": false,
+  "ticket_summary": ""
+}` },
+  { id:7,  icon:'🧾', title:'Invoice Parser',            desc:'Extracts PDF invoice fields with 99% accuracy',        cat:'data',  price:0,    featured:false, content:`ROLE
+You extract invoice fields from OCR text.
+
+INPUT
+{{ocr_text}}
+
+OUTPUT JSON
+{
+  "supplier_name": "",
+  "invoice_number": "",
+  "invoice_date_iso": "",
+  "currency": "",
+  "subtotal": 0,
+  "tax": 0,
+  "total": 0,
+  "line_items": [
+    { "name": "", "qty": 0, "unit_price": 0, "line_total": 0 }
+  ],
+  "confidence_0_1": 0
+}
+
+RULES
+- Use dot decimal.
+- If uncertain, set null and lower confidence.
+- Validate subtotal + tax ~= total.` },
+  { id:8,  icon:'📧', title:'Cold Email Writer',         desc:'Personalized outreach sequences with A/B variants',    cat:'sales', price:1200, featured:false, content:`ROLE
+You write cold outbound emails.
+
+INPUT
+prospect={{prospect_data}}
+offer={{offer}}
+proof={{proof_points}}
+
+TASK
+Create:
+- subject A/B
+- email A/B (90-140 words)
+- follow-up #1 and #2
+
+RULES
+- First line must be personalized.
+- One clear CTA.
+- No hype words, no fake urgency.
+- Keep readability high.` },
+  { id:9,  icon:'📰', title:'News Aggregator Agent',    desc:'Monitors 50+ sources, filters & sends digest',         cat:'auto',  price:800,  featured:false, content:`ROLE
+You build a daily news digest for {{topic}}.
+
+INPUT
+articles={{article_list}}
+audience={{audience_profile}}
+
+TASK
+1) Deduplicate similar stories.
+2) Rank by relevance and impact.
+3) Summarize top 7 stories.
+
+OUTPUT
+- Morning brief (3 bullets)
+- Main digest with:
+  - headline
+  - why_it_matters
+  - key_fact
+  - source_link
+- Watchlist (emerging items)` },
+  { id:10, icon:'📝', title:'Blog Post Generator',      desc:'Long-form SEO posts with meta tags & image prompts',   cat:'write', price:2000, featured:false, content:`ROLE
+You are an SEO Blog Writer.
+
+INPUT
+topic={{topic}}
+search_intent={{intent}}
+keywords={{keywords}}
+audience={{audience}}
+
+OUTPUT
+1) Article outline (H1/H2/H3).
+2) Full article 1200-1800 words.
+3) FAQ section (5 Q/A).
+4) Meta title + description.
+5) 3 image prompts for hero/section visuals.
+
+RULES
+- Clear structure and transitions.
+- Practical examples.
+- No keyword stuffing.
+- End with strong CTA.` },
 ];
 
 function renderSkillCard(s) {
@@ -452,7 +719,7 @@ function showSkillDetail(skillId) {
   if (alreadyOwned) {
     if (primaryBtn) primaryBtn.className = 'btn btn-secondary btn-full';
     primaryBtn?.addEventListener('click', async () => {
-      const value = s.content ?? t('skillContentMissing');
+      const value = buildProtectedExportContent(s);
       const ok = await navigator.clipboard?.writeText?.(value).then(() => true).catch(() => false);
       if (!ok) {
         const ta = document.createElement('textarea');
