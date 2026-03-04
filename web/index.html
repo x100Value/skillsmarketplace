@@ -3,335 +3,392 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <title>SkillsMarketplace</title>
-  <link rel="stylesheet" href="/styles.css?v=10"/>
+  <title>SkillsMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/styles.css?v=12"/>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
 <!-- Auth Overlay -->
 <div id="authOverlay" style="display:none">
-  <div class="auth-logo">🤖</div>
+  <div class="auth-logo">SM</div>
   <div class="auth-title" data-i18n="authTitle">SkillsMarketplace</div>
   <div class="auth-sub" data-i18n="authSub">Marketplace for AI Agent Skills</div>
-  <button id="authBtn" class="btn btn-primary btn-full" style="max-width:280px" data-i18n="authBtn">
+  <button id="authBtn" class="btn btn-primary" style="width:100%;max-width:260px;padding:12px" data-i18n="authBtn">
     Continue with Telegram
   </button>
-  <p id="authError" class="text-hint" style="font-size:13px;display:none"></p>
+  <p id="authError" style="font-size:11px;display:none;font-family:var(--mono);color:var(--muted);text-align:center"></p>
 </div>
 
 <!-- Main App -->
 <div class="app-root" id="appRoot">
 
-  <!-- ── MARKET SCREEN ──────────────────────────────────────────────────── -->
-  <div class="screen active" id="screen-market">
-
-    <div class="search-bar">
-      <span class="search-icon">🔍</span>
-      <input id="searchInput" type="text" data-i18n-placeholder="searchPlaceholder" placeholder="Search skills..."/>
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-logo">SM</div>
+    <div class="topbar-center">
+      <div class="topbar-title" id="topbarTitle" data-i18n="tabMarket">Market</div>
+      <div class="topbar-sub" id="topbarSub">Skill Catalog</div>
     </div>
-
-    <div class="filter-row" id="filterRow">
-      <div class="filter-chip active" data-cat="all"   data-i18n="catAll">All</div>
-      <div class="filter-chip"        data-cat="agent"  data-i18n="catAgents">Agents</div>
-      <div class="filter-chip"        data-cat="auto"   data-i18n="catAuto">Automation</div>
-      <div class="filter-chip"        data-cat="data"   data-i18n="catData">Analytics</div>
-      <div class="filter-chip"        data-cat="write"  data-i18n="catWrite">Writing</div>
-      <div class="filter-chip"        data-cat="sales"  data-i18n="catSales">Sales</div>
+    <div class="topbar-right">
+      <div class="status-live">
+        <div class="status-dot"></div>
+        <span data-i18n="alphaBadge">Alpha</span>
+      </div>
+      <div class="stars-badge" id="topbarBalance">⭐ 0</div>
     </div>
-
-    <div class="section-title" data-i18n="featuredTitle">Featured</div>
-    <div class="skills-grid" id="skillsGrid"></div>
-
-    <div class="section-title" data-i18n="newTitle">New</div>
-    <div class="skills-grid" id="skillsGridNew"></div>
-
   </div>
 
-  <!-- ── STUDIO SCREEN ─────────────────────────────────────────────────── -->
-  <div class="screen" id="screen-studio">
+  <!-- Screens wrapper -->
+  <div class="screens-wrap">
 
-    <!-- Balance -->
-    <div class="card balance-card">
-      <div class="balance-label" data-i18n="yourBalance">Your Balance</div>
-      <div class="balance-amount"><span id="studioBalance">0</span> ✨</div>
-      <div class="balance-row">
-        <div class="balance-item">
-          <div class="balance-item-label" data-i18n="heldLabel">Held</div>
-          <div class="balance-item-val" id="studioHeld">0</div>
-        </div>
-        <div class="balance-item">
-          <div class="balance-item-label" data-i18n="availableLabel">Available</div>
-          <div class="balance-item-val" id="studioAvailable">0</div>
-        </div>
-      </div>
-    </div>
+    <!-- ── MARKET ─────────────────────────────────────────────────────────── -->
+    <div class="screen active" id="screen-market">
 
-    <!-- Skill Check -->
-    <div class="card">
-      <div class="card-head">
-        <div>
-          <div class="card-title" data-i18n="checkTitle">Skill Uniqueness Check</div>
-          <div class="card-sub" data-i18n="checkSub">Verify before publishing</div>
+      <!-- Alpha Banner -->
+      <div class="alpha-banner">
+        <div class="banner-tag" data-i18n="alphaBannerTitle">🚀 Alpha Testing</div>
+        <div class="banner-title" data-i18n="bannerHeadline">Join SkillsMarket</div>
+        <div class="banner-sub" data-i18n="alphaBannerSub">
+          We are accepting early creators and buyers. Join the waitlist.
         </div>
-        <button class="btn btn-secondary btn-sm" id="toggleCheckForm" data-i18n="openBtn">Open</button>
+        <button class="btn-alpha" id="alphaApplyBtnMarket" data-i18n="alphaApplyBtn">
+          Apply for Alpha Access →
+        </button>
       </div>
 
-      <div id="checkForm" style="display:none">
-        <div class="form-group">
-          <label class="form-label" data-i18n="skillTitleLabel">Skill title</label>
-          <input id="skillTitleInput" class="form-input" type="text" maxlength="160"
-            data-i18n-placeholder="skillTitlePlaceholder" placeholder="Telegram Lead Qualification Agent"/>
+      <!-- Search -->
+      <div class="search-row">
+        <div class="search-bar">
+          <span class="search-icon">⌕</span>
+          <input id="searchInput" type="text" data-i18n-placeholder="searchPlaceholder" placeholder="Search skills..."/>
         </div>
-        <div class="form-group">
-          <label class="form-label" data-i18n="providerModeLabel">Search mode</label>
-          <div class="text-hint" style="font-size:13px" data-i18n="checkModeHint">MVP mode: Hybrid (safe default)</div>
-          <input id="skillModeInput" type="hidden" value="hybrid"/>
-        </div>
-        <div class="form-group">
-          <label class="form-label" data-i18n="skillTextLabel">Skill / Prompt text</label>
-          <textarea id="skillTextInput" class="form-textarea"
-            data-i18n-placeholder="skillTextPlaceholder"
-            placeholder="Paste your full skill or prompt text here (min 80 chars)"></textarea>
-        </div>
+      </div>
 
-        <div class="status-row" id="checkStatusRow" style="display:none">
-          <div class="status-dot" id="checkStatusDot"></div>
-          <span id="checkStatusText" class="text-hint" style="font-size:13px"></span>
-          <span id="checkPrice" style="margin-left:auto;font-size:13px;font-weight:700"></span>
-        </div>
+      <!-- Filter tabs -->
+      <div class="tabs" id="filterRow">
+        <div class="tab active" data-cat="all"   data-i18n="catAll">All</div>
+        <div class="tab"        data-cat="agent"  data-i18n="catAgents">Agents</div>
+        <div class="tab"        data-cat="auto"   data-i18n="catAuto">Automation</div>
+        <div class="tab"        data-cat="data"   data-i18n="catData">Analytics</div>
+        <div class="tab"        data-cat="write"  data-i18n="catWrite">Writing</div>
+        <div class="tab"        data-cat="sales"  data-i18n="catSales">Sales</div>
+      </div>
 
-        <div class="gap-8 mt-12">
-          <button id="quoteBtn" class="btn btn-secondary w-full" data-i18n="getQuoteBtn">Get Quote</button>
-          <button id="runBtn"   class="btn btn-primary w-full"   data-i18n="runCheckBtn">Run Check</button>
-        </div>
+      <!-- Featured -->
+      <div class="section-header">
+        <div class="section-tag" data-i18n="featuredTitle">Featured</div>
+      </div>
+      <div class="skills-grid" id="skillsGrid"></div>
 
-        <!-- Report -->
-        <div id="reportCard" class="card report-card" style="display:none">
-          <div class="score-ring">
-            <div id="scoreNum" class="score-num">—</div>
+      <!-- New -->
+      <div class="section-header" style="margin-top:18px">
+        <div class="section-tag" data-i18n="newTitle">New</div>
+      </div>
+      <div class="skills-grid" id="skillsGridNew"></div>
+
+      <!-- Uniqueness Engine -->
+      <div class="section-header" style="margin-top:24px;margin-bottom:12px">
+        <div class="section-tag" data-i18n="protectionTag">Uniqueness Engine · 3-Layer Protection</div>
+      </div>
+      <div class="protection-grid">
+        <div class="protect-card" style="--card-color:var(--accent)">
+          <div class="protect-card-inner">
+            <div class="protect-icon">🔢</div>
             <div>
-              <div id="riskChip" class="chip">—</div>
-              <div class="score-label" data-i18n="uniquenessScore">Uniqueness score</div>
+              <div class="protect-title" data-i18n="layer1Title">Semantic Similarity</div>
+              <div class="protect-desc" data-i18n="layer1Desc">Embeddings + cosine distance check against all existing skill prompts. Blocks clones above threshold.</div>
+              <div style="margin-top:8px"><span class="badge badge-blue" data-i18n="layer1Badge">Layer 1</span></div>
             </div>
           </div>
-          <div id="reportSummary" style="font-size:14px;color:var(--hint);margin-bottom:10px"></div>
-          <button id="publishSkillBtn" class="btn btn-primary btn-full" style="display:none;margin-bottom:8px" data-i18n="publishSkillBtn">Publish Skill</button>
-          <pre id="reportRaw" class="code-block" style="display:none"></pre>
-          <button id="toggleRaw" class="btn btn-secondary btn-sm btn-full mt-8" data-i18n="showRaw">Show details</button>
+        </div>
+        <div class="protect-card" style="--card-color:var(--accent2)">
+          <div class="protect-card-inner">
+            <div class="protect-icon">🧬</div>
+            <div>
+              <div class="protect-title" data-i18n="layer2Title">Structural Fingerprint</div>
+              <div class="protect-desc" data-i18n="layer2Desc">Analyzes instruction chains, execution graph, and system prompt block structure.</div>
+              <div style="margin-top:8px"><span class="badge badge-purple" data-i18n="layer2Badge">Layer 2</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="protect-card" style="--card-color:var(--accent3)">
+          <div class="protect-card-inner">
+            <div class="protect-icon">🧪</div>
+            <div>
+              <div class="protect-title" data-i18n="layer3Title">Output Fingerprinting</div>
+              <div class="protect-desc" data-i18n="layer3Desc">Runs skill on test inputs, compares output embeddings and response structure against known skills.</div>
+              <div style="margin-top:8px"><span class="badge badge-green" data-i18n="layer3Badge">Layer 3</span></div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-  </div>
+    </div><!-- /screen-market -->
 
-  <!-- ── ACCOUNT SCREEN ─────────────────────────────────────────────────── -->
-  <div class="screen" id="screen-account">
+    <!-- ── STUDIO ─────────────────────────────────────────────────────────── -->
+    <div class="screen" id="screen-studio">
 
-    <!-- Profile -->
-    <div class="card" id="withdrawCard">
-      <div class="profile-card">
-        <div class="profile-avatar" id="profileAvatar">?</div>
+      <!-- Balance mini stats -->
+      <div class="stat-cards-row">
+        <div class="stat-card" style="--card-accent:var(--accent)">
+          <div class="stat-icon">✨</div>
+          <div class="stat-label" data-i18n="yourBalance">Balance</div>
+          <div class="stat-value" style="color:var(--accent);font-size:18px" id="studioBalance">0</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--gold)">
+          <div class="stat-icon">🔒</div>
+          <div class="stat-label" data-i18n="heldLabel">Held</div>
+          <div class="stat-value" style="color:var(--gold);font-size:18px" id="studioHeld">0</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--accent3)">
+          <div class="stat-icon">💎</div>
+          <div class="stat-label" data-i18n="availableLabel">Available</div>
+          <div class="stat-value" style="color:var(--accent3);font-size:18px" id="studioAvailable">0</div>
+        </div>
+      </div>
+
+      <!-- Skill Check Input -->
+      <div class="check-panel">
+        <div class="check-panel-header">
+          <span>📝</span>
+          <span data-i18n="checkPanelHeader">Input Prompt / Skill</span>
+          <span style="margin-left:auto" class="badge badge-blue" data-i18n="llmBadge">LLM Analysis</span>
+        </div>
+        <div class="check-panel-body">
+          <input id="skillTitleInput" class="form-input" type="text" maxlength="160"
+            data-i18n-placeholder="skillTitlePlaceholder" placeholder="Skill title..."/>
+          <textarea id="skillTextInput"
+            data-i18n-placeholder="skillTextPlaceholder"
+            placeholder="Paste your skill or prompt text here (min 80 chars)..."></textarea>
+          <input id="skillModeInput" type="hidden" value="hybrid"/>
+
+          <div class="status-row" id="checkStatusRow" style="display:none">
+            <div class="status-dot-check" id="checkStatusDot"></div>
+            <span id="checkStatusText" style="font-size:12px;font-family:var(--mono);color:var(--muted);flex:1"></span>
+            <span id="checkPrice" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--gold)"></span>
+          </div>
+
+          <div class="btn-row">
+            <button id="quoteBtn" class="btn btn-ghost" data-i18n="getQuoteBtn">Get Quote</button>
+            <button id="runBtn"   class="btn btn-primary" data-i18n="runCheckBtn">⚡ Run Check</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Report card -->
+      <div id="reportCard" style="display:none">
+
+        <div class="section-header" style="margin-bottom:10px">
+          <div class="section-tag" data-i18n="resultsTag">Analysis Results</div>
+        </div>
+
+        <div class="results-grid">
+          <div class="result-item">
+            <div class="result-label" data-i18n="uniquenessScore">Uniqueness Score</div>
+            <div class="result-score" id="scoreNum">—</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label" data-i18n="riskLabel">Risk Level</div>
+            <div class="result-score" id="riskChip">—</div>
+          </div>
+        </div>
+
+        <div class="check-panel">
+          <div class="check-panel-header">📋 <span data-i18n="llmAssessment">LLM Assessment</span></div>
+          <div class="check-panel-body">
+            <div id="reportSummary" style="font-size:13px;line-height:1.6;color:var(--muted)"></div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <button id="publishSkillBtn" class="btn btn-outline btn-sm" style="display:none" data-i18n="publishSkillBtn">Publish Skill</button>
+              <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="checkPriceFinal"></span>
+            </div>
+          </div>
+        </div>
+
+        <button id="toggleRaw" class="btn btn-ghost btn-full" style="margin-top:8px" data-i18n="showRaw">Show details</button>
+        <pre id="reportRaw" class="terminal" style="display:none;margin-top:8px"></pre>
+
+      </div><!-- /reportCard -->
+
+      <!-- Creator apply card -->
+      <div class="check-panel" style="margin-top:16px">
+        <div class="check-panel-header">
+          <span>🎨</span>
+          <span data-i18n="creatorTag">For Creators</span>
+          <span class="badge badge-gold" style="margin-left:auto" data-i18n="earlyAccessBadge">Early Access</span>
+        </div>
+        <div class="check-panel-body">
+          <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:12px" data-i18n="creatorSub">
+            Publish your AI skills and earn Stars from every sale. Apply for early access.
+          </div>
+          <button class="btn-alpha" id="alphaApplyBtnStudio" data-i18n="alphaApplyBtn">
+            Apply for Alpha Access →
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /screen-studio -->
+
+    <!-- ── ACCOUNT ────────────────────────────────────────────────────────── -->
+    <div class="screen" id="screen-account">
+
+      <!-- Profile -->
+      <div class="creator-card">
+        <div class="creator-avatar" id="profileAvatar"
+          style="background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;font-weight:800">?</div>
+        <div class="creator-info">
+          <div class="creator-name" id="profileName">—</div>
+          <div class="creator-handle" id="profileId">—</div>
+        </div>
+        <div id="profileBadge"></div>
+      </div>
+
+      <!-- Ledger stats -->
+      <div class="section-header" style="margin-bottom:10px">
+        <div class="section-tag" data-i18n="ledgerTag">Ledger · Balance</div>
+      </div>
+      <div class="stat-cards-row">
+        <div class="stat-card" style="--card-accent:var(--accent)">
+          <div class="stat-icon">✨</div>
+          <div class="stat-label" data-i18n="availableLabel">Available</div>
+          <div class="stat-value" style="color:var(--accent);font-size:18px" id="accountAvailable">0</div>
+          <div class="stat-change" style="color:var(--muted)"><span id="accountStars">0</span> ⭐</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--gold)">
+          <div class="stat-icon">🔒</div>
+          <div class="stat-label" data-i18n="heldLabel">Held</div>
+          <div class="stat-value" style="color:var(--gold);font-size:18px" id="accountHeld">0</div>
+          <div class="stat-change" style="color:var(--muted)" data-i18n="inEscrow">in escrow</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--accent3)">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label" data-i18n="yourBalance">Balance</div>
+          <div class="stat-value" style="color:var(--accent3);font-size:18px" id="accountBalance">0</div>
+          <div class="stat-change" style="color:var(--muted)">total ✨</div>
+        </div>
+      </div>
+
+      <!-- Payments disabled -->
+      <div class="payments-disabled" style="margin-bottom:10px">
+        <span>🔒</span>
         <div>
-          <div class="profile-name" id="profileName">—</div>
-          <div class="profile-id"   id="profileId">—</div>
+          <strong data-i18n="paymentsDisabledTitle">Payments are disabled during Alpha.</strong><br>
+          <span data-i18n="paymentsDisabledSub">Top-up and withdrawals will be available after public launch.</span>
         </div>
-        <div id="profileBadge" class="chip" style="margin-left:auto"></div>
       </div>
-    </div>
+      <button class="btn-alpha" style="margin-bottom:18px" id="alphaApplyBtnAccount" data-i18n="alphaApplyBtn">
+        Apply for Alpha Access →
+      </button>
 
-    <!-- Wallet -->
-    <div class="card">
-      <div class="card-head">
-        <div>
-          <div class="card-title" data-i18n="walletTitle">Wallet</div>
-          <div class="card-sub" data-i18n="walletSub">Top up and withdrawals</div>
-        </div>
+      <!-- My Library -->
+      <div class="section-header" style="margin-bottom:10px">
+        <div class="section-tag" data-i18n="libraryTitle">My Library</div>
       </div>
+      <div id="libraryList" style="margin-bottom:16px"></div>
 
-      <div class="balance-row">
-        <div class="balance-item">
-          <div class="balance-item-label" data-i18n="yourBalance">Your Balance</div>
-          <div class="balance-item-val"><span id="accountBalance">0</span> ✨</div>
-        </div>
-        <div class="balance-item">
-          <div class="balance-item-label" data-i18n="heldLabel">Held</div>
-          <div class="balance-item-val" id="accountHeld">0</div>
-        </div>
+      <!-- Event log / History -->
+      <div class="section-header" style="margin-bottom:10px">
+        <div class="section-tag" data-i18n="historyTag">Event Log · Transactions</div>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" id="historyRefreshBtn" data-i18n="refreshBtn">Refresh</button>
       </div>
-      <div class="balance-row">
-        <div class="balance-item">
-          <div class="balance-item-label" data-i18n="availableLabel">Available</div>
-          <div class="balance-item-val" id="accountAvailable">0</div>
-        </div>
-        <div class="balance-item">
-          <div class="balance-item-label">⭐ Stars</div>
-          <div class="balance-item-val" id="accountStars">0</div>
-        </div>
-      </div>
+      <div class="ledger-table" id="historyList"></div>
 
-      <div class="card-head mt-12" style="margin-bottom:8px">
-        <div>
-          <div class="card-title" data-i18n="topUpTitle">Top Up</div>
-          <div class="card-sub" data-i18n="topUpSub">Buy Stardust via Telegram Stars</div>
+      <!-- Referral -->
+      <div class="stat-card" style="--card-accent:var(--accent2);margin-top:16px">
+        <div class="stat-label" style="margin-bottom:12px" data-i18n="refTitle">Referral Program</div>
+        <div class="ref-levels">
+          <div class="ref-level">
+            <span data-i18n="level1">Level 1</span>
+            <span class="badge badge-blue">3%</span>
+            <span id="refEarn1" style="font-family:var(--mono);font-size:12px">0 ✨</span>
+          </div>
+          <div class="ref-level">
+            <span data-i18n="level2">Level 2</span>
+            <span class="badge badge-purple">2%</span>
+            <span id="refEarn2" style="font-family:var(--mono);font-size:12px">0 ✨</span>
+          </div>
+          <div class="ref-level">
+            <span data-i18n="level3">Level 3</span>
+            <span class="badge badge-green">1%</span>
+            <span id="refEarn3" style="font-family:var(--mono);font-size:12px">0 ✨</span>
+          </div>
         </div>
-      </div>
-      <div class="topup-grid">
-        <button class="btn btn-secondary topup-btn" data-stars="100">⭐ 100</button>
-        <button class="btn btn-secondary topup-btn" data-stars="500">⭐ 500</button>
-        <button class="btn btn-secondary topup-btn" data-stars="1000">⭐ 1000</button>
-      </div>
-    </div>
-
-    <!-- Admin Test Top-up -->
-    <div class="card" id="adminTopupCard" style="display:none">
-      <div class="card-head">
-        <div>
-          <div class="card-title" data-i18n="adminTopupTitle">Admin Test Balance</div>
-          <div class="card-sub" data-i18n="adminTopupSub">Quickly add Stars for test purchases</div>
+        <div class="ref-link-box">
+          <span class="ref-link-text" id="refLinkText">—</span>
+          <button class="btn btn-outline btn-sm" id="copyRefBtn" data-i18n="copyBtn">Copy</button>
         </div>
-      </div>
-      <div class="topup-grid">
-        <button class="btn btn-secondary admin-topup-btn" data-stars="500">+⭐ 500</button>
-        <button class="btn btn-secondary admin-topup-btn" data-stars="2000">+⭐ 2,000</button>
-        <button class="btn btn-secondary admin-topup-btn" data-stars="5000">+⭐ 5,000</button>
-      </div>
-    </div>
-
-    <!-- Withdrawal -->
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title" data-i18n="withdrawTitle">Withdrawal</div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" data-i18n="withdrawLabel">Amount (Stardust)</label>
-        <input id="withdrawInput" class="form-input" type="number" min="10" step="10" value="500"/>
-        <div class="text-hint" style="font-size:12px" data-i18n="withdrawHoldHint">
-          Funds are held for 22 days before payout decision.
-        </div>
-      </div>
-      <button id="withdrawBtn" class="btn btn-secondary btn-full" data-i18n="withdrawBtn">Create Request</button>
-    </div>
-
-    <!-- Library -->
-    <div class="card">
-      <div class="card-head">
-        <div>
-          <div class="card-title" data-i18n="libraryTitle">My Library</div>
-          <div class="card-sub" data-i18n="librarySub">Purchased and free claimed skills</div>
-        </div>
-      </div>
-      <div class="history-list" id="libraryList"></div>
-    </div>
-
-    <!-- Referral Program -->
-    <div class="card">
-      <div class="card-head">
-        <div>
-          <div class="card-title" data-i18n="refTitle">Referral Program</div>
-          <div class="card-sub"   data-i18n="refSub">Earn from your network</div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px">
+          <span style="color:var(--muted)" data-i18n="totalEarned">Total earned:</span>
+          <span id="refTotalEarned" style="font-family:var(--mono);font-weight:700">0 ✨</span>
         </div>
       </div>
 
-      <div class="ref-levels">
-        <div class="ref-level">
-          <div class="ref-level-num"  data-i18n="level1">Level 1</div>
-          <div class="ref-level-pct">3%</div>
-          <div class="ref-level-earn" id="refEarn1">0 ⭐</div>
-        </div>
-        <div class="ref-level">
-          <div class="ref-level-num"  data-i18n="level2">Level 2</div>
-          <div class="ref-level-pct">2%</div>
-          <div class="ref-level-earn" id="refEarn2">0 ⭐</div>
-        </div>
-        <div class="ref-level">
-          <div class="ref-level-num"  data-i18n="level3">Level 3</div>
-          <div class="ref-level-pct">1%</div>
-          <div class="ref-level-earn" id="refEarn3">0 ⭐</div>
+      <!-- Language -->
+      <div class="stat-card" style="--card-accent:var(--border);margin-top:12px">
+        <div class="stat-label" style="margin-bottom:10px" data-i18n="languageTitle">Language</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost lang-btn" data-lang="ru" id="langRu">🇷🇺 Русский</button>
+          <button class="btn btn-ghost lang-btn" data-lang="en" id="langEn">🇬🇧 English</button>
         </div>
       </div>
 
-      <div class="ref-link-box">
-        <span class="ref-link-text" id="refLinkText">—</span>
-        <button class="btn btn-secondary btn-sm" id="copyRefBtn" data-i18n="copyBtn">Copy</button>
-      </div>
-
-      <div class="ref-total">
-        <span class="text-hint" data-i18n="totalEarned">Total earned:</span>
-        <span id="refTotalEarned" class="fw-700">0 ⭐</span>
-      </div>
-    </div>
-
-    <!-- Language -->
-    <div class="card card-sm">
-      <div class="card-head" style="margin-bottom:10px">
-        <div class="card-title" data-i18n="languageTitle">Language</div>
-      </div>
-      <div class="lang-row">
-        <button class="lang-btn" data-lang="ru" id="langRu">🇷🇺 Русский</button>
-        <button class="lang-btn" data-lang="en" id="langEn">🇬🇧 English</button>
-      </div>
-    </div>
-
-    <!-- History -->
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title" data-i18n="historyTitle">History</div>
-        <button class="btn btn-secondary btn-sm" id="historyRefreshBtn" data-i18n="refreshBtn">Refresh</button>
-      </div>
-      <div class="history-list" id="historyList"></div>
-    </div>
-
-    <!-- Settings -->
-    <div class="card">
-      <div class="settings-item" id="settingsLegal">
-        <div class="settings-item-left">
-          <span class="settings-item-icon">📄</span>
-          <span class="settings-item-label" data-i18n="legalTitle">Legal</span>
+      <!-- Settings -->
+      <div class="stat-card" style="--card-accent:var(--border);margin-top:12px;padding:0;overflow:hidden">
+        <div class="settings-item" id="settingsLegal">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;flex:1">
+            <span>📄</span>
+            <span style="font-size:14px" data-i18n="legalTitle">Legal</span>
+          </div>
+          <span style="color:var(--muted);padding-right:16px;font-size:18px">›</span>
         </div>
-        <span class="settings-item-arrow">›</span>
-      </div>
-      <div class="settings-item" id="settingsLogout">
-        <div class="settings-item-left">
-          <span class="settings-item-icon">🚪</span>
-          <span class="settings-item-label" style="color:var(--danger)" data-i18n="logoutBtn">Log out</span>
+        <div class="settings-item" id="settingsLogout" style="border-top:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;flex:1">
+            <span>🚪</span>
+            <span style="font-size:14px;color:var(--danger)" data-i18n="logoutBtn">Log out</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Legal links (hidden by default, toggled) -->
-    <div class="card" id="legalCard" style="display:none">
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <a class="text-link" href="/legal"                     target="_blank" data-legal="openLegal">Legal Center</a>
-        <a class="text-link" href="/doc?f=LEGAL_OFFER_RU.md"    target="_blank" data-legal="publicOffer">Public Offer</a>
-        <a class="text-link" href="/doc?f=PRIVACY_POLICY_RU.md" target="_blank" data-legal="privacyPolicy">Privacy Policy</a>
-        <a class="text-link" href="/doc?f=REFUND_POLICY_RU.md"  target="_blank" data-legal="refundRules">Refund Rules</a>
+      <!-- Legal links -->
+      <div id="legalCard" style="display:none;margin-top:12px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <a class="text-link" href="/legal"                       target="_blank" data-legal="openLegal">Legal Center</a>
+          <a class="text-link" href="/doc?f=LEGAL_OFFER_RU.md"    target="_blank" data-legal="publicOffer">Public Offer</a>
+          <a class="text-link" href="/doc?f=PRIVACY_POLICY_RU.md" target="_blank" data-legal="privacyPolicy">Privacy Policy</a>
+          <a class="text-link" href="/doc?f=REFUND_POLICY_RU.md"  target="_blank" data-legal="refundRules">Refund Policy</a>
+        </div>
       </div>
-    </div>
 
-  </div>
+      <div style="height:10px"></div>
+
+    </div><!-- /screen-account -->
+
+  </div><!-- /screens-wrap -->
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-btn active" data-screen="market">
+      <span class="nav-icon">🏪</span>
+      <span data-i18n="tabMarket">Market</span>
+    </button>
+    <button class="nav-btn" data-screen="studio">
+      <span class="nav-icon">🧠</span>
+      <span data-i18n="tabStudio">Studio</span>
+    </button>
+    <button class="nav-btn" data-screen="account">
+      <span class="nav-icon">🧾</span>
+      <span data-i18n="tabAccount">Ledger</span>
+    </button>
+  </nav>
 
 </div><!-- /app-root -->
-
-<!-- Bottom Nav -->
-<nav class="bottom-nav" id="bottomNav">
-  <button class="nav-btn active" data-screen="market">
-    <span class="nav-icon">🏪</span>
-    <span data-i18n="tabMarket">Market</span>
-  </button>
-  <button class="nav-btn" data-screen="studio">
-    <span class="nav-icon">⚡</span>
-    <span data-i18n="tabStudio">Studio</span>
-  </button>
-  <button class="nav-btn" data-screen="account">
-    <span class="nav-icon">👤</span>
-    <span data-i18n="tabAccount">Account</span>
-  </button>
-</nav>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script type="module" src="/app.js?v=10"></script>
+<script type="module" src="/app.js?v=12"></script>
 </body>
 </html>

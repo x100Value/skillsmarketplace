@@ -16,6 +16,7 @@ import { pricingRouter } from "./routes/pricing.js";
 import { historyRouter } from "./routes/history.js";
 import { skillCheckRouter } from "./routes/skillCheck.js";
 import { moderationRouter } from "./routes/moderation.js";
+import { alphaRouter } from "./routes/alpha.js";
 
 const app = express();
 const allowedOrigins = new Set(config.CORS_ALLOW_ORIGINS);
@@ -108,9 +109,15 @@ app.use("/api/skill-check", skillCheckRouter);
 app.use("/api/withdrawals", withdrawalsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/moderation", moderationRouter);
+app.use("/api/alpha", alphaRouter);
 
 const webPath = path.resolve(process.cwd(), "web");
 const docsPath = path.resolve(process.cwd(), "docs");
+
+// Unknown API routes — return JSON, not HTML
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
 
 app.use("/docs", express.static(docsPath));
 app.use(express.static(webPath));
@@ -127,6 +134,13 @@ app.get("*", (_req, res) => {
   res.sendFile(path.join(webPath, "index.html"));
 });
 
-app.listen(config.PORT, () => {
+// Global error handler — must be last, 4-param signature required by Express
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  logger.error({ err }, "Unhandled error");
+  res.status(500).json({ error: "Internal error" });
+});
+
+app.listen(config.PORT, "127.0.0.1", () => {
   logger.info({ port: config.PORT }, "Server started");
 });
