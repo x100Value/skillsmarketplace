@@ -74,7 +74,7 @@ export async function getReferralChain(userId: number): Promise<ChainEntry[]> {
 
 export async function payReferralEarnings(
   sourceUserId: number,
-  amountStars: number,
+  amountCredits: number,
   eventId: string
 ): Promise<void> {
   const chain = await getReferralChain(sourceUserId);
@@ -88,31 +88,45 @@ export async function payReferralEarnings(
 
   for (const { userId, level } of chain) {
     const pct = pcts[level] ?? 0;
-    const earn = Math.floor((amountStars * pct) / 100);
+    const earn = Math.floor((amountCredits * pct) / 100);
     if (earn <= 0) continue;
+    const ledgerRefId = `${eventId}:u${userId}:l${level}`;
 
     try {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
 
+        const inserted = await client.query(
+          `INSERT INTO referral_earnings
+             (user_id, source_user_id, source_event_id, level, amount_credits)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (user_id, source_event_id, level) DO NOTHING
+           RETURNING id`,
+          [userId, sourceUserId, eventId, level, earn]
+        );
+        if (!inserted.rowCount) {
+          await client.query("ROLLBACK");
+          continue;
+        }
+
         await client.query(
-          `UPDATE balances SET total_stars = total_stars + $1, updated_at = NOW()
+          `INSERT INTO balances (user_id, total_credits, held_credits)
+           VALUES ($1, 0, 0)
+           ON CONFLICT (user_id) DO NOTHING`,
+          [userId]
+        );
+
+        await client.query(
+          `UPDATE balances SET total_credits = total_credits + $1, updated_at = NOW()
            WHERE user_id = $2`,
           [earn, userId]
         );
 
         await client.query(
-          `INSERT INTO ledger_entries (user_id, type, amount_stars, ref_type, ref_id, metadata)
+          `INSERT INTO ledger_entries (user_id, type, amount_credits, ref_type, ref_id, metadata)
            VALUES ($1, 'referral_credit', $2, 'referral', $3, $4::jsonb)`,
-          [userId, earn, eventId, JSON.stringify({ sourceUserId, level, pct })]
-        );
-
-        await client.query(
-          `INSERT INTO referral_earnings
-             (user_id, source_user_id, source_event_id, level, amount_stars)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [userId, sourceUserId, eventId, level, earn]
+          [userId, earn, ledgerRefId, JSON.stringify({ sourceUserId, level, pct, eventId })]
         );
 
         await client.query("COMMIT");
@@ -143,7 +157,7 @@ export async function getReferralStats(userId: number): Promise<{
     cnt: string;
     earned: string;
   }>(
-    `SELECT level, count(*) as cnt, coalesce(sum(amount_stars),0) as earned
+    `SELECT level, count(*) as cnt, coalesce(sum(amount_credits),0) as earned
      FROM referral_earnings WHERE user_id = $1 GROUP BY level`,
     [userId]
   );

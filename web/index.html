@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/styles.css?v=12"/>
+  <link rel="stylesheet" href="/styles.css?v=usdt-2"/>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -38,7 +38,8 @@
         <div class="status-dot"></div>
         <span data-i18n="alphaBadge">Alpha</span>
       </div>
-      <div class="stars-badge" id="topbarBalance">⭐ 0</div>
+      <button class="wallet-btn" id="walletConnectBtn" title="Connect Wallet">💎</button>
+      <div class="stars-badge" id="topbarBalance">💎 /usr/bin/bash.00</div>
     </div>
   </div>
 
@@ -202,6 +203,7 @@
           <div class="check-panel-body">
             <div id="reportSummary" style="font-size:13px;line-height:1.6;color:var(--muted)"></div>
             <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <button id="shareCheckBtn" class="btn btn-ghost btn-sm" style="display:none" data-i18n="shareCheckBtn">Share result</button>
               <button id="publishSkillBtn" class="btn btn-outline btn-sm" style="display:none" data-i18n="publishSkillBtn">Publish Skill</button>
               <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="checkPriceFinal"></span>
             </div>
@@ -222,7 +224,7 @@
         </div>
         <div class="check-panel-body">
           <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:12px" data-i18n="creatorSub">
-            Publish your AI skills and earn Stars from every sale. Apply for early access.
+            Publish your AI skills and earn USDT from every sale. Apply for early access.
           </div>
           <button class="btn-alpha" id="alphaApplyBtnStudio" data-i18n="alphaApplyBtn">
             Apply for Alpha Access →
@@ -255,7 +257,7 @@
           <div class="stat-icon">✨</div>
           <div class="stat-label" data-i18n="availableLabel">Available</div>
           <div class="stat-value" style="color:var(--accent);font-size:18px" id="accountAvailable">0</div>
-          <div class="stat-change" style="color:var(--muted)"><span id="accountStars">0</span> ⭐</div>
+          <div class="stat-change" style="color:var(--muted)"><span id="accountStars">/usr/bin/bash.00</span> USDT</div>
         </div>
         <div class="stat-card" style="--card-accent:var(--gold)">
           <div class="stat-icon">🔒</div>
@@ -268,6 +270,21 @@
           <div class="stat-label" data-i18n="yourBalance">Balance</div>
           <div class="stat-value" style="color:var(--accent3);font-size:18px" id="accountBalance">0</div>
           <div class="stat-change" style="color:var(--muted)">total ✨</div>
+        </div>
+      </div>
+
+      
+      <!-- TON Wallet -->
+      <div class="stat-card" id="walletCard" style="--card-accent:var(--accent2);margin-bottom:12px">
+        <div class="stat-label" style="margin-bottom:10px">TON Wallet</div>
+        <div id="walletStatus" style="font-size:13px;color:var(--muted);font-family:var(--mono);margin-bottom:10px">Not connected</div>
+        <button class="btn btn-primary" id="walletConnectBtnAccount" style="width:100%">Connect TON Wallet</button>
+        <button class="btn btn-outline" id="buyCryptoBtn" style="width:100%;margin-top:8px">💳 Buy Crypto with Card</button>
+        <div id="walletBalanceRow" style="display:none;margin-top:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <span style="color:var(--muted)">TON Balance:</span>
+            <span id="walletBalance" style="font-family:var(--mono);font-weight:700">0 TON</span>
+          </div>
         </div>
       </div>
 
@@ -389,6 +406,7 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script type="module" src="/app.js?v=12"></script>
+<script src="/tonconnect-ui.min.js"></script>
+  <script type="module" src="/app.js?v=usdt-5"></script>
 </body>
 </html>

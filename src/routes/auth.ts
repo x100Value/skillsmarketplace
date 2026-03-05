@@ -5,9 +5,11 @@ import { verifyTelegramInitData, type VerifiedInitData } from "../telegram.js";
 import { ensureBalanceRow, upsertUser } from "../services/users.js";
 import { createSession } from "../services/sessions.js";
 import { writeAuditLog } from "../services/audit.js";
+import { applyReferralCode, ensureReferralCode } from "../services/referral.js";
 
 const bodySchema = z.object({
-  initData: z.string().min(1)
+  initData: z.string().min(1),
+  referralCode: z.string().trim().min(4).max(64).optional()
 });
 
 export const authRouter = Router();
@@ -15,7 +17,7 @@ export const authRouter = Router();
 authRouter.post("/telegram", async (req, res) => {
   const parsed = bodySchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
+    res.status(400).json({ error: "Invalid request" });
     return;
   }
 
@@ -25,7 +27,7 @@ authRouter.post("/telegram", async (req, res) => {
   } catch (error) {
     res.status(401).json({
       error: "Invalid initData",
-      details: error instanceof Error ? error.message : "unknown"
+
     });
     return;
   }
@@ -57,6 +59,22 @@ authRouter.post("/telegram", async (req, res) => {
     });
 
     await client.query("COMMIT");
+
+    const startParamCode = verified.raw.start_param?.trim() ?? "";
+    const explicitCode = parsed.data.referralCode?.trim() ?? "";
+    const referralCode = explicitCode || startParamCode;
+
+    // Apply referral code (best-effort, outside transaction)
+    if (referralCode.length >= 4) {
+      try {
+        await applyReferralCode(user.id, referralCode);
+      } catch {
+        // ignore referral errors
+      }
+    }
+
+    // Ensure referral code exists for this user
+    await ensureReferralCode(user.id).catch(() => {});
 
     res.json({
       token,

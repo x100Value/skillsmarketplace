@@ -6,6 +6,7 @@ import type { AuthedRequest } from "../types.js";
 import { getSkillCheckQuote, runSkillCheck } from "../services/skillCheck.js";
 import type { SkillCheckMode } from "../services/skillCheckProviders.js";
 import { holdForRef, settleRef } from "../services/billing.js";
+import { payReferralEarnings } from "../services/referral.js";
 import { pool } from "../db.js";
 import { config } from "../config.js";
 
@@ -90,7 +91,7 @@ skillCheckRouter.post("/run", requireAuth, async (req: AuthedRequest, res) => {
   try {
     await pool.query(
       `INSERT INTO skill_checks (
-        id, user_id, title, skill_text, mode, status, estimated_stars
+        id, user_id, title, skill_text, mode, status, estimated_credits
       ) VALUES ($1, $2, $3, $4, $5, 'queued', $6)`,
       [
         checkId,
@@ -133,7 +134,7 @@ skillCheckRouter.post("/run", requireAuth, async (req: AuthedRequest, res) => {
     await pool.query(
       `UPDATE skill_checks
        SET status = 'done',
-           actual_stars = $2,
+           actual_credits = $2,
            uniqueness_score = $3,
            risk_level = $4,
            provider_used = $5,
@@ -154,6 +155,12 @@ skillCheckRouter.post("/run", requireAuth, async (req: AuthedRequest, res) => {
       ]
     );
 
+    try {
+      await payReferralEarnings(userId, finalActual, `skill_check:${checkId}`);
+    } catch {
+      // Referral payouts are best-effort and should not block completed checks.
+    }
+
     res.json({
       checkId,
       status: "done",
@@ -161,8 +168,8 @@ skillCheckRouter.post("/run", requireAuth, async (req: AuthedRequest, res) => {
         estimated: quote.pricing,
         actual: {
           ...quote.pricing,
-          baseStars: result.actualBaseCredits,
-          totalStars: finalActual
+          baseCredits: result.actualBaseCredits,
+          totalCredits: finalActual
         }
       },
       providerUsed: result.providerUsed,

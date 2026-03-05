@@ -1,12 +1,8 @@
 'use strict';
 
 // ── Currency ──────────────────────────────────────────────────────────────────
-const STARDUST_RATE = 10;
-const SD   = '✨';
-const STAR = '⭐';
-function toStardust(stars) { return stars * STARDUST_RATE; }
-function toStars(sd)       { return Math.ceil(sd / STARDUST_RATE); }
-function fmtSD(stars)      { return toStardust(stars).toLocaleString() + ' ' + SD; }
+function fmtUsdt(usdt) { return '$' + Number(usdt).toFixed(2); }
+function creditsToUsdt(credits) { return Number(credits) / 100; }
 
 // ── i18n ──────────────────────────────────────────────────────────────────────
 const LANGS = {
@@ -32,7 +28,7 @@ const LANGS = {
     uniquenessScore:'Uniqueness Score', riskLabel:'Risk Level',
     showRaw:'Show details', hideRaw:'Hide details',
     creatorTag:'For Creators', earlyAccessBadge:'Early Access',
-    creatorSub:'Publish your AI skills and earn Stars from every sale. Apply for early access.',
+    creatorSub:'Publish your AI skills and earn USDT from every sale. Apply for early access.',
     protectionTag:'Uniqueness Engine · 3-Layer Protection',
     layer1Title:'Semantic Similarity', layer1Desc:'Embeddings + cosine distance check against all existing skill prompts. Blocks clones above threshold.', layer1Badge:'Layer 1',
     layer2Title:'Structural Fingerprint', layer2Desc:'Analyzes instruction chains, execution graph, and system prompt block structure.', layer2Badge:'Layer 2',
@@ -45,6 +41,24 @@ const LANGS = {
     legalTitle:'Legal', openLegal:'Legal Center',
     publicOffer:'Public Offer', privacyPolicy:'Privacy Policy', refundRules:'Refund Policy',
     logoutBtn:'Log out',
+    featuredBadge:'Featured', freeBadge:'Free',
+    priceLabel:'Price', costLabel:'Cost',
+    runsLabel:'runs',
+    minCharsToast:'Min 80 chars',
+    estimatedCostLabel:'Estimated cost',
+    toastSignedOut:'Signed out',
+    adminBadge:'Admin',
+    historyEvent:'Event', historyAmount:'Amount', historyDate:'Date',
+    eventCredit:'Credit',
+    eventReferralCredit:'Referral credit',
+    eventDebit:'Debit',
+    eventHold:'Hold',
+    eventRelease:'Release',
+    eventWithdrawHold:'Withdraw hold',
+    eventWithdrawDebit:'Withdraw debit',
+    eventWithdrawRelease:'Withdraw release',
+    eventAdminCredit:'Admin credit',
+    eventDemoPurchase:'Demo purchase',
     toastCopied:'Link copied!', toastError:'Error, please try again',
     toastOwned:'Already in your library',
     toastSkillPublished:'Skill published to Market (demo)',
@@ -73,6 +87,18 @@ const LANGS = {
     sendApplicationBtn:'Send Application',
     cancelBtn:'Cancel',
     roleCreator:'Creator', roleBuyer:'Buyer', roleBoth:'Both',
+    connectWallet:'Connect Wallet',
+    disconnectWallet:'Disconnect Wallet',
+    walletConnected:'Wallet connected',
+    walletDisconnected:'Wallet disconnected',
+    walletNotConnected:'Wallet not connected',
+    walletInitFailed:'Wallet init failed',
+    walletConnectFailed:'Wallet connection failed',
+    shareCheckBtn:'Share result',
+    shareLead:'I checked my skill uniqueness in SkillsMarketplace.',
+    shareTryLabel:'Try it',
+    toastShareOpened:'Share window opened',
+    toastShareCopied:'Share text copied',
   },
   ru: {
     authTitle:'SkillsMarketplace', authSub:'Маркетплейс скилов для AI-агентов',
@@ -96,7 +122,7 @@ const LANGS = {
     uniquenessScore:'Уникальность', riskLabel:'Уровень риска',
     showRaw:'Детали', hideRaw:'Скрыть детали',
     creatorTag:'Для создателей', earlyAccessBadge:'Ранний доступ',
-    creatorSub:'Публикуйте AI-скилы и зарабатывайте Stars с каждой продажи. Подайте заявку на ранний доступ.',
+    creatorSub:'Публикуйте AI-скилы и зарабатывайте USDT с каждой продажи. Подайте заявку на ранний доступ.',
     protectionTag:'Движок уникальности · 3 уровня защиты',
     layer1Title:'Семантическое сходство', layer1Desc:'Embeddings + косинусное расстояние до всех скилов. Блокирует клоны выше порога.', layer1Badge:'Слой 1',
     layer2Title:'Структурный отпечаток', layer2Desc:'Анализирует цепочки инструкций, граф выполнения и структуру системного промта.', layer2Badge:'Слой 2',
@@ -109,6 +135,24 @@ const LANGS = {
     legalTitle:'Правовые документы', openLegal:'Правовой центр',
     publicOffer:'Публичная оферта', privacyPolicy:'Политика конфиденциальности', refundRules:'Условия возврата',
     logoutBtn:'Выйти',
+    featuredBadge:'Рекомендуем', freeBadge:'Бесплатно',
+    priceLabel:'Цена', costLabel:'Стоимость',
+    runsLabel:'запусков',
+    minCharsToast:'Мин. 80 символов',
+    estimatedCostLabel:'Оценка стоимости',
+    toastSignedOut:'Вы вышли из аккаунта',
+    adminBadge:'Админ',
+    historyEvent:'Событие', historyAmount:'Сумма', historyDate:'Дата',
+    eventCredit:'Начисление',
+    eventReferralCredit:'Реф. начисление',
+    eventDebit:'Списание',
+    eventHold:'Холд',
+    eventRelease:'Разморозка',
+    eventWithdrawHold:'Холд вывода',
+    eventWithdrawDebit:'Списание вывода',
+    eventWithdrawRelease:'Разморозка вывода',
+    eventAdminCredit:'Админ начисление',
+    eventDemoPurchase:'Демо покупка',
     toastCopied:'Скопировано!', toastError:'Ошибка, попробуйте снова',
     toastOwned:'Уже в вашей библиотеке',
     toastSkillPublished:'Скил опубликован в Маркете (demo)',
@@ -137,6 +181,18 @@ const LANGS = {
     sendApplicationBtn:'Отправить заявку',
     cancelBtn:'Отмена',
     roleCreator:'Создатель', roleBuyer:'Покупатель', roleBoth:'Оба варианта',
+    connectWallet:'Подключить кошелек',
+    disconnectWallet:'Отключить кошелек',
+    walletConnected:'Кошелек подключен',
+    walletDisconnected:'Кошелек отключен',
+    walletNotConnected:'Кошелек не подключен',
+    walletInitFailed:'Ошибка инициализации кошелька',
+    walletConnectFailed:'Не удалось подключить кошелек',
+    shareCheckBtn:'Поделиться результатом',
+    shareLead:'Я проверил уникальность своего скила в SkillsMarketplace.',
+    shareTryLabel:'Попробуй тоже',
+    toastShareOpened:'Открыто окно шаринга',
+    toastShareCopied:'Текст для шаринга скопирован',
   }
 };
 
@@ -164,7 +220,20 @@ function detectLang() {
   lang = 'en';
 }
 
-function setLang(l) { lang = l; localStorage.setItem('sm_lang', l); applyLang(); renderSkills(); }
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('sm_lang', l);
+  applyLang();
+  renderSkills();
+
+  const activeScreen = document.querySelector('.nav-btn.active')?.dataset.screen ?? 'market';
+  const meta = SCREEN_META[activeScreen] ?? SCREEN_META.market;
+  const titleEl = document.getElementById('topbarTitle');
+  const subEl = document.getElementById('topbarSub');
+  if (titleEl) titleEl.textContent = t(meta.titleKey);
+  if (subEl) subEl.textContent = t(meta.subKey);
+  if (activeScreen === 'account' && token) loadHistory();
+}
 
 function updateLegalLinks() {
   const suffix = lang === 'ru' ? 'RU' : 'EN';
@@ -189,6 +258,7 @@ let currentFilter = 'all';
 let authInProgress = false;
 let currentUser = null;
 let lastCheckContext = null;
+let cachedReferralLink = null;
 const SESSION_TG_UID_KEY  = 'sm_session_tg_uid';
 const PURCHASED_SKILLS_KEY = 'sm_purchased_skills';
 const PUBLISHED_SKILLS_KEY = 'sm_published_skills';
@@ -200,6 +270,7 @@ function getCurrentTelegramUserId() {
 
 function clearSessionToken() {
   token = null; currentUser = null;
+  cachedReferralLink = null;
   localStorage.removeItem('sm_token');
   localStorage.removeItem(SESSION_TG_UID_KEY);
 }
@@ -241,6 +312,286 @@ function escapeHtml(v) {
   return String(v ?? '')
     .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
     .replaceAll('"','&quot;').replaceAll("'",'&#39;');
+}
+
+
+// ── TON Connect ───────────────────────────────────────────────────────────────
+let tonConnectUI = null;
+let tonWalletAddress = null;
+
+let tonConnectScriptLoading = null;
+
+function ensureTonConnectUiLoaded() {
+  if (window.TON_CONNECT_UI) return Promise.resolve(window.TON_CONNECT_UI);
+  if (tonConnectScriptLoading) return tonConnectScriptLoading;
+
+  tonConnectScriptLoading = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-tonconnect-ui="1"]');
+    if (existing) {
+      existing.addEventListener('load', () => {
+        if (window.TON_CONNECT_UI) resolve(window.TON_CONNECT_UI);
+        else reject(new Error('TON_CONNECT_UI not available after script load'));
+      }, { once: true });
+      existing.addEventListener('error', () => reject(new Error('Failed to load TON Connect UI script')), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = '/tonconnect-ui.min.js';
+    script.async = true;
+    script.dataset.tonconnectUi = '1';
+    script.addEventListener('load', () => {
+      if (window.TON_CONNECT_UI) resolve(window.TON_CONNECT_UI);
+      else reject(new Error('TON_CONNECT_UI not available after script load'));
+    }, { once: true });
+    script.addEventListener('error', () => reject(new Error('Failed to load TON Connect UI script')), { once: true });
+    document.head.appendChild(script);
+  });
+
+  return tonConnectScriptLoading;
+}
+
+async function initTonConnect() {
+  try {
+    if (typeof window.TON_CONNECT_UI === 'undefined') {
+      await ensureTonConnectUiLoaded();
+    }
+
+    if (!tonConnectUI) {
+      tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: 'https://skillsmarketplace.ru/tonconnect-manifest.json',
+        actionsConfiguration: {
+          twaReturnUrl: 'https://t.me/SkillsMarketplacebot/app',
+        },
+      });
+
+      tonConnectUI.onStatusChange(
+        wallet => {
+          syncTonWalletState(wallet).catch(err => {
+            console.error('TON wallet state sync error:', err);
+          });
+        },
+        err => {
+          console.error('TON Connect status error:', err);
+        }
+      );
+    }
+
+    await syncTonWalletState(tonConnectUI.wallet);
+
+    if (tonConnectUI.connectionRestored && typeof tonConnectUI.connectionRestored.then === 'function') {
+      tonConnectUI.connectionRestored
+        .then(() => syncTonWalletState(tonConnectUI.wallet))
+        .catch(err => console.error('TON Connect restore error:', err));
+    }
+  } catch (e) {
+    console.error('TON Connect init error:', e);
+  }
+}
+
+async function syncTonWalletState(walletState) {
+  const rawAddr = walletState?.account?.address ?? '';
+  if (!rawAddr) {
+    tonWalletAddress = null;
+    updateWalletUI(false, null);
+    return;
+  }
+
+  let addr = rawAddr;
+  try {
+    if (window.TON_CONNECT_UI.toUserFriendlyAddress) {
+      addr = window.TON_CONNECT_UI.toUserFriendlyAddress(rawAddr);
+    }
+  } catch (e) {
+    console.warn('Address conversion failed:', e);
+  }
+
+  tonWalletAddress = addr;
+  updateWalletUI(true, addr);
+  await saveWalletToBackend(addr);
+
+  try {
+    tonConnectUI?.closeModal();
+  } catch (e) {
+    // Safe to ignore: modal may already be closed.
+  }
+}
+
+function updateWalletUI(connected, address) {
+  const topBtn = document.getElementById('walletConnectBtn');
+  const accBtn = document.getElementById('walletConnectBtnAccount');
+  const statusEl = document.getElementById('walletStatus');
+  const balRow = document.getElementById('walletBalanceRow');
+
+  if (connected && address) {
+    const short = address.slice(0,4) + '...' + address.slice(-4);
+    if (topBtn) {
+      topBtn.textContent = short;
+      topBtn.classList.add('connected');
+    }
+    if (accBtn) {
+      accBtn.textContent = t('disconnectWallet');
+      accBtn.classList.add('btn-danger');
+      accBtn.classList.remove('btn-primary');
+    }
+    if (statusEl) statusEl.textContent = t('walletConnected') + ': ' + short;
+    if (balRow) balRow.style.display = 'block';
+  } else {
+    if (topBtn) {
+      topBtn.textContent = '\u{1f48e}';
+      topBtn.classList.remove('connected');
+    }
+    if (accBtn) {
+      accBtn.textContent = t('connectWallet');
+      accBtn.classList.remove('btn-danger');
+      accBtn.classList.add('btn-primary');
+    }
+    if (statusEl) statusEl.textContent = t('walletNotConnected');
+    if (balRow) balRow.style.display = 'none';
+  }
+}
+
+async function waitForWalletConnection(timeoutMs = 12000, stepMs = 300) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const walletState = tonConnectUI?.wallet;
+    if (walletState?.account?.address) return walletState;
+    await new Promise(resolve => setTimeout(resolve, stepMs));
+  }
+  return null;
+}
+
+async function toggleWalletConnection() {
+  try {
+    if (!tonConnectUI) {
+      await initTonConnect();
+    }
+    if (!tonConnectUI) {
+      showToast(t('walletInitFailed'));
+      return;
+    }
+
+    if (tonConnectUI.wallet || tonWalletAddress) {
+      await tonConnectUI.disconnect();
+      await syncTonWalletState(null);
+      showToast(t('walletDisconnected'));
+      return;
+    }
+
+    await tonConnectUI.openModal();
+    const connectedWallet = await waitForWalletConnection();
+    if (connectedWallet) {
+      await syncTonWalletState(connectedWallet);
+      showToast(t('walletConnected'));
+      return;
+    }
+
+    await syncTonWalletState(tonConnectUI.wallet);
+    if (!tonConnectUI.wallet?.account?.address) {
+      showToast(t('walletConnectFailed'));
+    }
+  } catch (e) {
+    console.error('TON wallet connect toggle failed:', e);
+    showToast(t('walletConnectFailed'));
+  }
+}
+
+async function saveWalletToBackend(address) {
+  try {
+    if (!token) {
+      await silentAuth(null);
+    }
+    if (!token) {
+      return;
+    }
+    await api('POST', '/api/me/wallet', { tonAddress: address });
+  } catch (e) {
+    console.error('Failed to save wallet:', e);
+  }
+}
+
+async function payWithTON(skillId, priceUsdt) {
+  if (!tonConnectUI || !tonWalletAddress) {
+    showToast(t('walletNotConnected'));
+    return false;
+  }
+  try {
+    // Create payment intent on backend
+    const intent = await api('POST', '/api/payments/ton/create-intent', {
+      skillId,
+      paymentRail: 'usdt',
+    });
+    if (!intent || !intent.intentId) {
+      showToast(t('tonPaymentFailed'));
+      return false;
+    }
+    // For now, USDT on TON — send jetton transfer
+    // Using simplified approach: send TON equivalent
+    const amountNano = Math.ceil(priceUsdt * 1e9).toString();
+    const tx = {
+      validUntil: Math.floor(Date.now() / 1000) + 600,
+      messages: [{
+        address: intent.walletAddress,
+        amount: amountNano,
+        payload: intent.memo || '',
+      }]
+    };
+    showToast(t('tonPaymentPending'));
+    const result = await tonConnectUI.sendTransaction(tx);
+    if (result?.boc) {
+      // Poll for confirmation
+      let confirmed = false;
+      for (let i = 0; i < 30; i++) {
+        await new Promise(r => setTimeout(r, 3000));
+        const status = await api('GET', '/api/payments/ton/status/' + intent.intentId);
+        if (status?.status === 'confirmed') {
+          confirmed = true;
+          break;
+        }
+        if (status?.status === 'failed' || status?.status === 'expired') break;
+      }
+      if (confirmed) {
+        showToast(t('tonPaymentSuccess'));
+        markSkillOwned(skillId);
+        renderSkills();
+        return true;
+      }
+    }
+    showToast(t('tonPaymentFailed'));
+    return false;
+  } catch (e) {
+    console.error('TON payment error:', e);
+    showToast(t('tonPaymentFailed'));
+    return false;
+  }
+}
+
+
+// ── Fiat On-Ramp (Mercuryo) ──────────────────────────────────────────────────
+async function openOnramp(cryptoCurrency) {
+  if (!tonWalletAddress) {
+    showToast(t('noWalletForOnramp'));
+    return;
+  }
+  try {
+    const session = await api('POST', '/api/payments/onramp/create', {
+      walletAddress: tonWalletAddress,
+      cryptoCurrency: cryptoCurrency || 'TON',
+      fiatAmount: 10,
+    });
+    if (session?.widgetUrl) {
+      // Open Mercuryo widget in a popup
+      const w = 400, h = 600;
+      const left = (screen.width - w) / 2;
+      const top = (screen.height - h) / 2;
+      window.open(session.widgetUrl, 'mercuryo', `width=${w},height=${h},left=${left},top=${top}`);
+    } else {
+      showToast(session?.error || 'On-ramp unavailable');
+    }
+  } catch (e) {
+    showToast('On-ramp error');
+    console.error(e);
+  }
 }
 
 // ── Invisible watermark ───────────────────────────────────────────────────────
@@ -332,7 +683,7 @@ async function requireAuth() {
 
 function logout() {
   clearSessionToken();
-  showToast(lang === 'ru' ? 'Вы вышли из аккаунта' : 'Signed out');
+  showToast(t('toastSignedOut'));
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -398,25 +749,25 @@ async function manualAuth(screen) {
 
 // ── Demo skills ───────────────────────────────────────────────────────────────
 const DEMO_SKILLS = [
-  { id:1,  icon:'🤖', title:'Telegram Lead Qualifier',    desc:'Qualifies leads from Telegram groups using NLP',         cat:'agent', price:2500, featured:true,
+  { id:1,  icon:'🤖', title:'Telegram Lead Qualifier',    desc:'Qualifies leads from Telegram groups using NLP',         cat:'agent', price:2500, price_usdt:2.50, featured:true,
     content:`ROLE\nYou are a Telegram Lead Qualification Agent for {{product_name}}.\n\nOBJECTIVE\n1) Classify lead intent (hot/warm/cold).\n2) Extract budget, timeline, authority, use-case.\n3) Suggest next step and draft reply.\n\nRULES\n- Ask at most 2 clarifying questions.\n- Do not invent data.\n\nOUTPUT JSON\n{"intent":"hot|warm|cold","score_0_100":0,"facts":{},"next_step":"","reply_draft":""}` },
-  { id:2,  icon:'✍️', title:'SEO Content Rewriter',        desc:'95%+ unique rewrites preserving full meaning',           cat:'write', price:1800, featured:true,
+  { id:2,  icon:'✍️', title:'SEO Content Rewriter',        desc:'95%+ unique rewrites preserving full meaning',           cat:'write', price:1800, price_usdt:1.80, featured:true,
     content:`ROLE\nYou are an SEO Content Rewriter.\n\nINPUT\nmode={{mode}}\ntarget_length={{target_words}}\nkeywords={{keywords_csv}}\nsource_text={{source_text}}\n\nRULES\n- Preserve factual meaning.\n- Keep keyword density natural.\n- Avoid plagiarism.\n- Use clear structure.` },
-  { id:3,  icon:'📊', title:'Data Analysis Pipeline',     desc:'Auto-cleans CSV/JSON data and generates insights',       cat:'data',  price:3200, featured:true,
+  { id:3,  icon:'📊', title:'Data Analysis Pipeline',     desc:'Auto-cleans CSV/JSON data and generates insights',       cat:'data',  price:3200, price_usdt:3.20, featured:true,
     content:`ROLE\nYou are a Data Analysis Agent.\n\nINPUT\ndata={{raw_data}}\ngoal={{analysis_goal}}\n\nTASK\n1) Profile the dataset.\n2) Detect anomalies.\n3) Generate 5 key insights.\n4) Suggest 3 next actions.\n\nOUTPUT\n- summary, anomalies[], insights[], next_steps[]` },
-  { id:4,  icon:'🤝', title:'Sales Script Generator',     desc:'Personalized B2B sales scripts with objection handlers',  cat:'sales', price:1500, featured:false,
+  { id:4,  icon:'🤝', title:'Sales Script Generator',     desc:'Personalized B2B sales scripts with objection handlers',  cat:'sales', price:1500, price_usdt:1.50, featured:false,
     content:`ROLE\nYou write B2B sales scripts.\n\nINPUT\nproduct={{product}}\nprospect={{prospect_profile}}\npain_points={{pain_points}}\n\nOUTPUT\n- Opening hook\n- Value proposition (30 sec)\n- 3 objection handlers\n- Closing CTA` },
-  { id:5,  icon:'⚡', title:'Zapier Flow Builder',        desc:'Generates Zapier automation flows from plain text',       cat:'auto',  price:900,  featured:false,
+  { id:5,  icon:'⚡', title:'Zapier Flow Builder',        desc:'Generates Zapier automation flows from plain text',       cat:'auto',  price:900, price_usdt:0.90,  featured:false,
     content:`ROLE\nYou are a Zapier automation architect.\n\nINPUT\ngoal={{automation_goal}}\ntools={{available_apps}}\n\nTASK\nDesign a complete Zapier flow:\n- Trigger app + event\n- Filter conditions\n- Action steps\n- Error handling\n\nOUTPUT\nStep-by-step flow with configuration details.` },
-  { id:6,  icon:'🧠', title:'Prompt Optimizer Pro',       desc:'Restructures prompts for max token efficiency',           cat:'agent', price:2000, featured:false,
+  { id:6,  icon:'🧠', title:'Prompt Optimizer Pro',       desc:'Restructures prompts for max token efficiency',           cat:'agent', price:2000, price_usdt:2.00, featured:false,
     content:`ROLE\nYou are a Prompt Engineering expert.\n\nINPUT\noriginal_prompt={{prompt}}\nmodel={{target_model}}\ngoal={{output_goal}}\n\nTASK\n1) Analyze the original prompt.\n2) Identify weaknesses.\n3) Rewrite for clarity and efficiency.\n4) Provide before/after comparison.` },
-  { id:7,  icon:'📧', title:'Cold Email Writer',          desc:'Personalized outreach sequences with A/B variants',       cat:'sales', price:1200, featured:false,
+  { id:7,  icon:'📧', title:'Cold Email Writer',          desc:'Personalized outreach sequences with A/B variants',       cat:'sales', price:1200, price_usdt:1.20, featured:false,
     content:`ROLE\nYou write cold outbound emails.\n\nINPUT\nprospect={{prospect_data}}\noffer={{offer}}\nproof={{proof_points}}\n\nTASK\nCreate subject A/B, email A/B (90-140 words), follow-up #1 and #2.\n\nRULES\n- First line must be personalized.\n- One clear CTA. No hype.` },
-  { id:8,  icon:'📰', title:'News Aggregator Agent',      desc:'Monitors 50+ sources, filters & sends digest',           cat:'auto',  price:800,  featured:false,
+  { id:8,  icon:'📰', title:'News Aggregator Agent',      desc:'Monitors 50+ sources, filters & sends digest',           cat:'auto',  price:800, price_usdt:0.80,  featured:false,
     content:`ROLE\nYou build a daily news digest for {{topic}}.\n\nINPUT\narticles={{article_list}}\naudience={{audience_profile}}\n\nTASK\n1) Deduplicate similar stories.\n2) Rank by relevance.\n3) Summarize top 7.\n\nOUTPUT\n- Morning brief (3 bullets)\n- Main digest with headline, why_it_matters, key_fact\n- Watchlist` },
-  { id:9,  icon:'📝', title:'Blog Post Generator',        desc:'Long-form SEO posts with meta tags & image prompts',     cat:'write', price:2000, featured:false,
+  { id:9,  icon:'📝', title:'Blog Post Generator',        desc:'Long-form SEO posts with meta tags & image prompts',     cat:'write', price:2000, price_usdt:2.00, featured:false,
     content:`ROLE\nYou are an SEO Blog Writer.\n\nINPUT\ntopic={{topic}}\nsearch_intent={{intent}}\nkeywords={{keywords}}\n\nOUTPUT\n1) Outline (H1/H2/H3)\n2) Full article 1200-1800 words\n3) FAQ section (5 Q/A)\n4) Meta title + description\n5) 3 image prompts` },
-  { id:10, icon:'🔍', title:'SEO Audit Engine',           desc:'Full on-page SEO analysis with competitor gap detection', cat:'data',  price:1600, featured:false,
+  { id:10, icon:'🔍', title:'SEO Audit Engine',           desc:'Full on-page SEO analysis with competitor gap detection', cat:'data',  price:1600, price_usdt:1.60, featured:false,
     content:`ROLE\nYou are an SEO Audit specialist.\n\nINPUT\nurl={{page_url}}\ncompetitors={{competitor_urls}}\ntarget_keywords={{keywords}}\n\nOUTPUT\n- On-page score (0-100)\n- Top 10 issues with priority\n- Competitor gaps\n- Actionable recommendations` },
 ];
 
@@ -437,16 +788,29 @@ const CAT_BADGE = {
   auto:  'badge-red',
 };
 
+const CAT_LABELS = {
+  agent: 'catAgents',
+  auto:  'catAuto',
+  data:  'catData',
+  write: 'catWrite',
+  sales: 'catSales',
+};
+
+function getCategoryLabel(cat) {
+  const key = CAT_LABELS[cat];
+  return key ? t(key) : cat;
+}
+
 function renderSkillCard(s) {
-  const isFree     = s.price === 0;
-  const priceLabel = isFree ? t('free') : '⭐ ' + toStars(s.price).toLocaleString();
+  const isFree     = !s.price_usdt || s.price_usdt === 0;
+  const priceLabel = isFree ? t('free') : fmtUsdt(s.price_usdt);
   const priceClass = isFree ? 'skill-price free' : 'skill-price';
   const bgColor    = CAT_COLORS[s.cat] ?? 'rgba(0,229,255,0.1)';
   const badge      = s.featured
-    ? `<span class="badge badge-gold">Featured</span>`
+    ? `<span class="badge badge-gold">${t('featuredBadge')}</span>`
     : isFree
-      ? `<span class="badge badge-green">Free</span>`
-      : `<span class="badge ${CAT_BADGE[s.cat] ?? 'badge-blue'}">${escapeHtml(s.cat)}</span>`;
+      ? `<span class="badge badge-green">${t('freeBadge')}</span>`
+      : `<span class="badge ${CAT_BADGE[s.cat] ?? 'badge-blue'}">${escapeHtml(getCategoryLabel(s.cat))}</span>`;
 
   return `<div class="skill-card" data-skill-id="${s.id}">
     <div class="skill-card-top">
@@ -460,8 +824,9 @@ function renderSkillCard(s) {
     <div class="skill-desc">${escapeHtml(s.desc)}</div>
     <div class="skill-footer">
       <span class="${priceClass}">${priceLabel}</span>
+
       <div class="skill-stats">
-        <span>⚡ ${(s.id * 317 % 9000 + 500).toLocaleString()} runs</span>
+        <span>⚡ ${(s.id * 317 % 9000 + 500).toLocaleString()} ${t('runsLabel')}</span>
       </div>
     </div>
   </div>`;
@@ -485,8 +850,8 @@ function renderSkills() {
 function showSkillDetail(skillId) {
   const s = getAllSkills().find(x => x.id === skillId);
   if (!s) return;
-  const isFree       = s.price === 0;
-  const priceStars   = isFree ? 0 : toStars(s.price);
+  const isFree       = !s.price_usdt || s.price_usdt === 0;
+  const priceUsdt    = s.price_usdt || 0;
   const alreadyOwned = hasSkill(s.id);
 
   document.getElementById('skillModal')?.remove();
@@ -504,9 +869,8 @@ function showSkillDetail(skillId) {
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;margin-bottom:14px">
           ${isFree
             ? `<div style="font-size:20px;font-weight:800;color:var(--accent3)">${t('free')}</div>`
-            : `<div style="font-size:12px;color:var(--muted);margin-bottom:2px">Price</div>
-               <div style="font-size:22px;font-weight:800;color:var(--gold)">⭐ ${priceStars.toLocaleString()} Stars</div>
-               <div style="font-size:11px;color:var(--muted);margin-top:2px">${toStardust(priceStars).toLocaleString()} ${SD}</div>`
+            : `<div style="font-size:12px;color:var(--muted);margin-bottom:2px">${t('priceLabel')}</div>
+               <div style="font-size:22px;font-weight:800;color:var(--accent)">💎 ${fmtUsdt(priceUsdt)} USDT</div>`
           }
         </div>
 
@@ -517,14 +881,15 @@ function showSkillDetail(skillId) {
           </div>` : ''}
 
         ${!alreadyOwned && !isFree ? `
-          <div class="payments-disabled" style="margin-bottom:12px">
-            <span>🔒</span>
-            <div>
-              <strong>${t('paymentsDisabledTitle')}</strong><br>
-              <span style="font-size:11px">${t('paymentsDisabledSub')}</span>
-            </div>
-          </div>
-          <button class="btn-alpha" style="margin-bottom:8px" id="modalAlphaBtn">${t('alphaApplyBtn')}</button>` : ''}
+          <div id="tonPayBlock">
+            <button class="btn btn-primary btn-full" id="modalTonPayBtn"
+              data-skill-id="${s.id}" data-price-usdt="${s.price_usdt || 0}">
+              💎 ${t('payWithTON')} — $${s.price_usdt || '?'}
+            </button>
+            <button class="btn btn-outline btn-full" style="margin-top:6px" id="modalBuyCardBtn">
+              💳 ${t('buyWithCard')}
+            </button>
+          </div>` : ''}
 
         ${alreadyOwned || isFree ? `
           <button class="btn ${isFree && !alreadyOwned ? 'btn-success' : 'btn-secondary'} btn-full" id="modalPrimaryAction">
@@ -560,6 +925,28 @@ function showSkillDetail(skillId) {
   } else if (isFree) {
     primaryBtn?.addEventListener('click', () => getSkill(s.id));
   }
+
+
+  // Buy with card button
+  modal.querySelector('#modalBuyCardBtn')?.addEventListener('click', () => openOnramp('TON'));
+
+  // TON pay button
+  const tonPayBtn = modal.querySelector('#modalTonPayBtn');
+  if (tonPayBtn) {
+    tonPayBtn.addEventListener('click', async () => {
+      const sid = tonPayBtn.dataset.skillId;
+      const price = parseFloat(tonPayBtn.dataset.priceUsdt);
+      tonPayBtn.disabled = true;
+      tonPayBtn.textContent = t('tonPaymentPending');
+      const ok = await payWithTON(sid, price);
+      if (ok) closeModal();
+      else {
+        tonPayBtn.disabled = false;
+        tonPayBtn.textContent = '\u{1f48e} ' + t('payWithTON');
+      }
+    });
+  }
+
   requestAnimationFrame(() => modal.classList.add('open'));
 }
 
@@ -651,31 +1038,25 @@ async function sendAlphaApplication(role, note) {
 async function loadBalance() {
   const data = await api('GET', '/api/me');
   if (!data) return;
-  const bal = data.balance ?? { total:0, held:0, available:0 };
-  const totalStars     = Math.max(0, Number(bal.total     ?? 0));
-  const heldStars      = Math.max(0, Math.min(totalStars, Number(bal.held ?? 0)));
-  const availableStars = Math.max(0, totalStars - heldStars);
-
-  const totalSd     = toStardust(totalStars).toLocaleString();
-  const heldSd      = toStardust(heldStars).toLocaleString();
-  const availableSd = toStardust(availableStars).toLocaleString();
+  const bal = data.balance ?? {};
+  const totalUsdt     = Number(bal.totalUsdt ?? 0);
+  const heldUsdt      = Number(bal.heldUsdt ?? 0);
+  const availableUsdt = Math.max(0, totalUsdt - heldUsdt);
 
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set('studioBalance',  totalSd);
-  set('studioHeld',     heldSd);
-  set('studioAvailable', availableSd);
-  set('accountBalance', totalSd);
-  set('accountHeld',    heldSd);
-  set('accountAvailable', availableSd);
-  set('accountStars',   totalStars.toLocaleString());
+  set('studioBalance',   fmtUsdt(totalUsdt));
+  set('studioHeld',      fmtUsdt(heldUsdt));
+  set('studioAvailable', fmtUsdt(availableUsdt));
+  set('accountBalance',  fmtUsdt(totalUsdt));
+  set('accountHeld',     fmtUsdt(heldUsdt));
+  set('accountAvailable',fmtUsdt(availableUsdt));
+  set('accountStars',    fmtUsdt(totalUsdt));
 
-  // Topbar stars badge
   const tb = document.getElementById('topbarBalance');
-  if (tb) tb.textContent = `⭐ ${totalStars.toLocaleString()}`;
+  if (tb) tb.textContent = '💎 ' + fmtUsdt(totalUsdt);
 }
 
 // Stubs for disabled features
-async function topUp(_stars)  { alphaApply(); }
 async function doWithdraw()   { alphaApply(); }
 
 // ── Skill Check ───────────────────────────────────────────────────────────────
@@ -695,12 +1076,12 @@ async function getQuote() {
   const title     = document.getElementById('skillTitleInput')?.value?.trim() ?? '';
   const skillText = document.getElementById('skillTextInput')?.value?.trim() ?? '';
   const mode      = document.getElementById('skillModeInput')?.value || 'hybrid';
-  if (!title || skillText.length < 80) { showToast(lang==='ru'?'Мин. 80 символов':'Min 80 chars'); return; }
+  if (!title || skillText.length < 80) { showToast(t('minCharsToast')); return; }
   setCheckStatus('queued', '...', '');
   const data = await api('POST', '/api/skill-check/quote', { title, skillText, mode });
   if (!data || data.error) { setCheckStatus('failed', data?.error || t('toastError'), ''); return; }
-  const costStars = Number(data.quote?.estimatedTotalCredits ?? 0);
-  setCheckStatus('queued', lang==='ru'?'Оценка стоимости':'Estimated cost', toStardust(costStars).toLocaleString() + ' ' + SD);
+  const costCredits = Number(data.quote?.estimatedTotalCredits ?? 0);
+  setCheckStatus('queued', t('estimatedCostLabel'), fmtUsdt(creditsToUsdt(costCredits)));
 }
 
 async function runCheck() {
@@ -708,13 +1089,15 @@ async function runCheck() {
   const title     = document.getElementById('skillTitleInput')?.value?.trim() ?? '';
   const skillText = document.getElementById('skillTextInput')?.value?.trim() ?? '';
   const mode      = document.getElementById('skillModeInput')?.value || 'hybrid';
-  if (!title || skillText.length < 80) { showToast(lang==='ru'?'Мин. 80 символов':'Min 80 chars'); return; }
+  if (!title || skillText.length < 80) { showToast(t('minCharsToast')); return; }
 
   setCheckStatus('running', t('toastRunning'), '');
   const reportCard = document.getElementById('reportCard');
   if (reportCard) reportCard.style.display = 'none';
   const publishBtn = document.getElementById('publishSkillBtn');
   if (publishBtn) publishBtn.style.display = 'none';
+  const shareBtn = document.getElementById('shareCheckBtn');
+  if (shareBtn) shareBtn.style.display = 'none';
   lastCheckContext = null;
 
   const data = await api('POST', '/api/skill-check/run', { title, skillText, mode });
@@ -729,9 +1112,9 @@ async function runCheck() {
   const dot       = isLow ? 'done' : isMed ? 'queued' : 'failed';
   const riskKey   = isLow ? 'riskLow' : isMed ? 'riskMed' : 'riskHigh';
   const scoreClass = isLow ? 'score-high' : isMed ? 'score-med' : 'score-low';
-  const costStars = Number(data.pricing?.actual?.totalStars ?? data.pricing?.estimated?.totalStars ?? 0);
+  const costCredits = Number(data.pricing?.actual?.totalCredits ?? data.pricing?.estimated?.totalCredits ?? 0);
 
-  setCheckStatus(dot, t(riskKey), toStardust(costStars).toLocaleString() + ' ' + SD);
+  setCheckStatus(dot, t(riskKey), fmtUsdt(creditsToUsdt(costCredits)));
 
   if (reportCard) reportCard.style.display = '';
   const scoreEl = document.getElementById('scoreNum');
@@ -743,10 +1126,11 @@ async function runCheck() {
   const rawEl = document.getElementById('reportRaw');
   if (rawEl) rawEl.textContent = JSON.stringify(data, null, 2);
   const finalPrice = document.getElementById('checkPriceFinal');
-  if (finalPrice) finalPrice.textContent = costStars > 0 ? `Cost: ${toStardust(costStars).toLocaleString()} ${SD}` : '';
+  if (finalPrice) finalPrice.textContent = costCredits > 0 ? `${t('costLabel')}: ${fmtUsdt(creditsToUsdt(costCredits))}` : '';
 
-  lastCheckContext = { title, skillText, score };
+  lastCheckContext = { title, skillText, score, riskKey };
   if (publishBtn) publishBtn.style.display = '';
+  if (shareBtn) shareBtn.style.display = '';
   loadBalance();
 }
 
@@ -781,6 +1165,11 @@ async function loadProfile() {
   if (!data) return;
   const u = data.user ?? {};
   currentUser = u;
+  const profileWallet = typeof u.tonAddress === 'string' ? u.tonAddress.trim() : '';
+  if (profileWallet.length >= 10 && !tonWalletAddress) {
+    tonWalletAddress = profileWallet;
+    updateWalletUI(true, profileWallet);
+  }
   const name  = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.username || '—';
   const el    = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   el('profileAvatar', (name[0] || '?').toUpperCase());
@@ -788,7 +1177,7 @@ async function loadProfile() {
   el('profileId',     u.username ? '@'+u.username : 'ID: '+(u.telegramUserId ?? '—'));
   const badge = document.getElementById('profileBadge');
   if (badge && u.isAppAdmin) {
-    badge.innerHTML = `<span class="badge badge-blue">Admin</span>`;
+    badge.innerHTML = `<span class="badge badge-blue">${t('adminBadge')}</span>`;
   }
 }
 
@@ -798,11 +1187,12 @@ async function loadReferral() {
   if (!data) return;
   const linkEl = document.getElementById('refLinkText');
   if (linkEl) linkEl.textContent = data.link ?? '—';
+  cachedReferralLink = data.link ?? null;
   const totEl = document.getElementById('refTotalEarned');
-  if (totEl) totEl.textContent = fmtSD(data.totalEarned ?? 0);
+  if (totEl) totEl.textContent = fmtUsdt(creditsToUsdt(data.totalEarned ?? 0));
   (data.levels ?? []).forEach(lv => {
     const el = document.getElementById('refEarn' + lv.level);
-    if (el) el.textContent = fmtSD(lv.earned ?? 0);
+    if (el) el.textContent = fmtUsdt(creditsToUsdt(lv.earned ?? 0));
   });
 }
 
@@ -817,6 +1207,77 @@ function copyRefLink() {
     showToast(t('toastCopied'));
   };
   navigator.clipboard ? navigator.clipboard.writeText(link).then(() => showToast(t('toastCopied'))).catch(fallback) : fallback();
+}
+
+async function getReferralShareLink() {
+  if (cachedReferralLink) return cachedReferralLink;
+  const data = await api('GET', '/api/referral');
+  const link = data?.link;
+  if (typeof link === 'string' && link.length >= 8) {
+    cachedReferralLink = link;
+    return link;
+  }
+  return 'https://t.me/SkillsMarketplacebot';
+}
+
+async function shareCheckResult() {
+  if (!lastCheckContext?.score) {
+    showToast(t('toastError'));
+    return;
+  }
+  if (!await requireAuth()) return;
+
+  const score = Number(lastCheckContext.score ?? 0);
+  const riskKey = score >= 70 ? 'riskLow' : score >= 40 ? 'riskMed' : 'riskHigh';
+  const referralLink = await getReferralShareLink();
+
+  const lines = [
+    t('shareLead'),
+    `${t('uniquenessScore')}: ${score}%`,
+    `${t('riskLabel')}: ${t(riskKey)}`,
+    '',
+    `${t('shareTryLabel')}: ${referralLink}`
+  ];
+
+  const shareText = lines.join('\n');
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(lines.slice(0, 4).join('\n'))}`;
+
+  try {
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(shareUrl);
+      showToast(t('toastShareOpened'));
+      return;
+    }
+  } catch {
+    // fallback below
+  }
+
+  try {
+    window.open(shareUrl, '_blank', 'noopener,noreferrer');
+    showToast(t('toastShareOpened'));
+    return;
+  } catch {
+    // fallback below
+  }
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareText);
+      showToast(t('toastShareCopied'));
+      return;
+    }
+  } catch {
+    // fallback below
+  }
+
+  const ta = document.createElement('textarea');
+  ta.value = shareText;
+  ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  showToast(t('toastShareCopied'));
 }
 
 // ── Library ───────────────────────────────────────────────────────────────────
@@ -836,7 +1297,7 @@ function renderLibrary() {
       <div style="font-size:22px;flex-shrink:0">${s.icon}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.title)}</div>
-        <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${s.price === 0 ? t('free') : '⭐ '+toStars(s.price).toLocaleString()}</div>
+        <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${!s.price_usdt ? t('free') : fmtUsdt(s.price_usdt)}</div>
       </div>
       <button class="btn btn-ghost btn-sm" data-open-skill="${s.id}">${t('openSkillBtn')}</button>
     </div>`).join('');
@@ -856,6 +1317,24 @@ const EVENT_BADGES = {
   demo_purchase:    'badge-purple',
 };
 
+const EVENT_LABELS = {
+  credit: 'eventCredit',
+  referral_credit: 'eventReferralCredit',
+  debit: 'eventDebit',
+  hold: 'eventHold',
+  release: 'eventRelease',
+  withdraw_hold: 'eventWithdrawHold',
+  withdraw_debit: 'eventWithdrawDebit',
+  withdraw_release: 'eventWithdrawRelease',
+  admin_credit: 'eventAdminCredit',
+  demo_purchase: 'eventDemoPurchase',
+};
+
+function getEventTypeLabel(type) {
+  const key = EVENT_LABELS[type];
+  return key ? t(key) : type.replace(/_/g, ' ');
+}
+
 async function loadHistory() {
   const container = document.getElementById('historyList');
   if (!container) return;
@@ -873,15 +1352,15 @@ async function loadHistory() {
   const rows = items.map(item => {
     const type    = item.type ?? '';
     const isPlus  = type.includes('credit') || type === 'release' || type === 'withdraw_release';
-    const sd      = toStardust(item.amountStars ?? item.amount_stars ?? 0);
+    const usdt    = Number(item.amountUsdt ?? (Number(item.amountCredits ?? item.amount_credits ?? 0) / 100));
     const amtClass = isPlus ? 'amount-pos' : 'amount-neg';
     const amtSign  = isPlus ? '+' : '−';
     const badgeClass = EVENT_BADGES[type] ?? 'badge-blue';
     const dt      = new Date(item.createdAt ?? item.created_at ?? Date.now());
     const date    = dt.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', { month:'short', day:'numeric' });
     return `<tr>
-      <td><span class="badge ${badgeClass}" style="font-size:9px">${type.replace(/_/g,' ')}</span></td>
-      <td class="${amtClass}">${amtSign}${sd.toLocaleString()} ${SD}</td>
+      <td><span class="badge ${badgeClass}" style="font-size:9px">${getEventTypeLabel(type)}</span></td>
+      <td class="${amtClass}">${amtSign}${fmtUsdt(usdt)}</td>
       <td style="font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap">${date}</td>
     </tr>`;
   }).join('');
@@ -890,9 +1369,9 @@ async function loadHistory() {
     <table>
       <thead>
         <tr>
-          <th>${lang === 'ru' ? 'Событие' : 'Event'}</th>
-          <th>${lang === 'ru' ? 'Сумма' : 'Amount'}</th>
-          <th>${lang === 'ru' ? 'Дата' : 'Date'}</th>
+          <th>${t('historyEvent')}</th>
+          <th>${t('historyAmount')}</th>
+          <th>${t('historyDate')}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -954,6 +1433,7 @@ function init() {
   // Skill check
   document.getElementById('quoteBtn')?.addEventListener('click', getQuote);
   document.getElementById('runBtn')?.addEventListener('click', runCheck);
+  document.getElementById('shareCheckBtn')?.addEventListener('click', shareCheckResult);
   document.getElementById('publishSkillBtn')?.addEventListener('click', publishCheckedSkill);
   document.getElementById('toggleRaw')?.addEventListener('click', toggleRaw);
 
@@ -980,6 +1460,12 @@ function init() {
 
   // Logout
   document.getElementById('settingsLogout')?.addEventListener('click', logout);
+
+  // TON Connect
+  initTonConnect();
+  document.getElementById('walletConnectBtn')?.addEventListener('click', toggleWalletConnection);
+  document.getElementById('walletConnectBtnAccount')?.addEventListener('click', toggleWalletConnection);
+  document.getElementById('buyCryptoBtn')?.addEventListener('click', () => openOnramp('TON'));
 }
 
 document.addEventListener('DOMContentLoaded', init);
